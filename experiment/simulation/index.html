@@ -1,13 +1,1094 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<!-- Add CSS at the head of HTML file -->
-    <link rel="stylesheet" href="./css/main.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>ECG Virtual Lab — Electrocardiography Signal Recording</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-		<!-- Your code goes here-->
+    <!-- LOADING SCREEN -->
+    <div id="loading-screen">
+        <div class="loader-content">
+            <div class="loader-spinner">
+                <svg viewBox="0 0 50 50" class="spinner-svg">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="#e0e7ef" stroke-width="4"></circle>
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="#4a90a4" stroke-width="4" stroke-dasharray="80" stroke-dashoffset="60" class="spinner-circle"></circle>
+                </svg>
+            </div>
+            <h1>ECG Virtual Laboratory</h1>
+            <p>Preparing your workstation...</p>
+            <div class="load-bar"><div class="load-fill"></div></div>
+        </div>
+    </div>
 
-	<!-- Add JS at the bottom of HTML file --> 
-        <script src="./js/main.js"></script>
+    <!-- MAIN APP -->
+    <div id="app" class="hidden">
+        <!-- LEFT SIDEBAR NAVIGATION -->
+        <aside id="sidebar-nav">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="logo.png" alt="Lab Logo" class="logo-image">
+                </div>
+                <div class="lab-title">
+                    <i class="fas fa-wave-square lab-icon"></i>
+                    <h2>ECG Virtual Lab</h2>
+                </div>
+                <p class="lab-subtitle">Biomedical Engineering</p>
+            </div>
+
+            <!-- Navigation Steps -->
+            <nav class="nav-steps-vertical" id="nav-steps">
+                <div class="nav-step active" data-step="0">
+                    <div class="step-indicator">
+                        <i class="fas fa-flask"></i>
+                        <span class="step-check"><i class="fas fa-check"></i></span>
+                    </div>
+                    <div class="step-content">
+                        <span class="step-label">Start</span>
+                    </div>
+                </div>
+                <div class="nav-step" data-step="1">
+                    <div class="step-indicator">
+                        <i class="fas fa-tools"></i>
+                        <span class="step-check"><i class="fas fa-check"></i></span>
+                    </div>
+                    <div class="step-content">
+                        <span class="step-label">Equipment</span>
+                    </div>
+                </div>
+                <div class="nav-step" data-step="2">
+                    <div class="step-indicator">
+                        <i class="fas fa-hand-holding-medical"></i>
+                        <span class="step-check"><i class="fas fa-check"></i></span>
+                    </div>
+                    <div class="step-content">
+                        <span class="step-label">Preparation</span>
+                    </div>
+                </div>
+                <div class="nav-step" data-step="3">
+                    <div class="step-indicator">
+                        <i class="fas fa-sliders-h"></i>
+                        <span class="step-check"><i class="fas fa-check"></i></span>
+                    </div>
+                    <div class="step-content">
+                        <span class="step-label">Calibration</span>
+                    </div>
+                </div>
+                <div class="nav-step" data-step="4">
+                    <div class="step-indicator">
+                        <i class="fas fa-wave-square"></i>
+                        <span class="step-check"><i class="fas fa-check"></i></span>
+                    </div>
+                    <div class="step-content">
+                        <span class="step-label">Recording</span>
+                    </div>
+                </div>
+                <div class="nav-step" data-step="5">
+                    <div class="step-indicator">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="step-check"><i class="fas fa-check"></i></span>
+                    </div>
+                    <div class="step-content">
+                        <span class="step-label">Analysis</span>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <button id="glossary-btn" class="btn-glossary">
+                    <i class="fas fa-book"></i>
+                    <span>Glossary</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main id="main-content">
+            <button class="lab-reset-btn" id="reset-lab-btn" type="button" title="Reset lab progress and state">
+                <i class="fas fa-rotate-left"></i>
+                <span>Reset</span>
+            </button>
+
+            <!-- STEP 0: START EXPERIMENT -->
+            <section class="lab-step active" id="step-0">
+                <div class="step-container">
+                    <div class="welcome-card">
+                        <div class="welcome-icon">
+                            <i class="fas fa-microscope"></i>
+                        </div>
+                        <h2>Electrocardiography (ECG) Signal Recording</h2>
+                        <p class="welcome-subtitle">Virtual Laboratory Experiment</p>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <i class="fas fa-bullseye"></i>
+                                <h3>Objective</h3>
+                            </div>
+                            <p>Study cardiac electrical activity using standard ECG leads and electrodes. Perform simulator-based placement, record ECG signals, compute RR intervals and heart rate, and interpret normal versus abnormal patterns.</p>
+                        </div>
+
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <i class="fas fa-graduation-cap"></i>
+                                <h3>Learning Outcomes</h3>
+                            </div>
+                            <ul>
+                                <li>Define basic ECG components: P wave, QRS complex, and T wave</li>
+                                <li>Identify normal ECG leads and electrode placement landmarks</li>
+                                <li>Demonstrate correct electrode placement in an ECG simulator</li>
+                                <li>Record ECG signals using simulation software/equipment</li>
+                                <li>Measure RR intervals and calculate heart rate from ECG</li>
+                                <li>Differentiate normal and abnormal ECG patterns</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="science-section-card">
+                        <h3><i class="fas fa-atom"></i> The Science Behind ECG</h3>
+                        <div class="science-grid">
+                            <div class="science-item">
+                                <h4><i class="fas fa-wave-square"></i> P Wave</h4>
+                                <p>The P wave represents <strong>atrial depolarization</strong> and is the first deflection of a normal sinus beat.</p>
+                            </div>
+                            <div class="science-item">
+                                <h4><i class="fas fa-bolt"></i> QRS Complex</h4>
+                                <p>The QRS complex represents <strong>ventricular depolarization</strong> and is usually the highest-amplitude part of the ECG trace.</p>
+                            </div>
+                            <div class="science-item">
+                                <h4><i class="fas fa-heart"></i> T Wave</h4>
+                                <p>The T wave represents <strong>ventricular repolarization</strong> and follows the QRS complex in a normal cardiac cycle.</p>
+                            </div>
+                            <div class="science-item">
+                                <h4><i class="fas fa-signal"></i> Lead and Rhythm Highlights</h4>
+                                <ul class="signal-specs">
+                                    <li><strong>Common rhythm lead:</strong> Lead II</li>
+                                    <li><strong>Typical ECG bandwidth:</strong> 0.05 - 150 Hz</li>
+                                    <li><strong>Normal heart rate:</strong> 60 - 100 bpm</li>
+                                    <li><strong>Heart rate formula:</strong> HR = 60000 / RR(ms)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="muap-visualization">
+                        <canvas id="muap-canvas" width="700" height="200"></canvas>
+                        <p class="canvas-caption">ECG cycle preview with P wave, QRS complex, and T wave landmarks</p>
+                    </div>
+
+                    <button class="btn-primary btn-lg" id="start-lab-btn">
+                        <i class="fas fa-play"></i>
+                        <span>Begin Experiment</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- STEP 1: EQUIPMENT -->
+            <section class="lab-step" id="step-1">
+                <div class="step-container">
+                    <div class="section-header">
+                        <i class="fas fa-toolbox"></i>
+                        <div>
+                            <h2>Equipment Familiarization</h2>
+                            <p>Click on each piece of equipment to learn about it. Explore ALL items before proceeding.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="equipment-lab">
+                        <div class="equipment-bench" id="equipment-bench">
+                            <!-- ECG Machine -->
+                            <div class="equipment-item" id="equip-ecg" data-name="ECG Amplifier System">
+                                <div class="equip-visual ecg-machine">
+                                    <i class="fas fa-desktop"></i>
+                                </div>
+                                <span class="equip-label">ECG Amplifier</span>
+                                <span class="equip-check"><i class="fas fa-check"></i></span>
+                            </div>
+
+                            <!-- Electrodes -->
+                            <div class="equipment-item" id="equip-electrodes" data-name="Surface Electrodes (Ag/AgCl)">
+                                <div class="equip-visual electrodes">
+                                    <i class="fas fa-circle-nodes"></i>
+                                </div>
+                                <span class="equip-label">Electrodes (Ag/AgCl)</span>
+                                <span class="equip-check"><i class="fas fa-check"></i></span>
+                            </div>
+
+                            <!-- Conductive Gel -->
+                            <div class="equipment-item" id="equip-gel" data-name="Conductive Gel">
+                                <div class="equip-visual gel-tube">
+                                    <i class="fas fa-droplet"></i>
+                                </div>
+                                <span class="equip-label">Conductive Gel</span>
+                                <span class="equip-check"><i class="fas fa-check"></i></span>
+                            </div>
+
+                            <!-- Alcohol Swabs -->
+                            <div class="equipment-item" id="equip-swabs" data-name="Alcohol Swabs (70% Isopropyl)">
+                                <div class="equip-visual swabs-box">
+                                    <i class="fas fa-prescription-bottle"></i>
+                                </div>
+                                <span class="equip-label">Alcohol Swabs</span>
+                                <span class="equip-check"><i class="fas fa-check"></i></span>
+                            </div>
+
+                            <!-- Computer/DAQ -->
+                            <div class="equipment-item" id="equip-daq" data-name="Data Acquisition System (DAQ)">
+                                <div class="equip-visual daq-system">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                                <span class="equip-label">DAQ System</span>
+                                <span class="equip-check"><i class="fas fa-check"></i></span>
+                            </div>
+
+                            <!-- Abrasive Pads -->
+                            <div class="equipment-item" id="equip-abrasive" data-name="Abrasive Skin Prep Pads">
+                                <div class="equip-visual abrasive-pad">
+                                    <i class="fas fa-eraser"></i>
+                                </div>
+                                <span class="equip-label">Abrasive Pads</span>
+                                <span class="equip-check"><i class="fas fa-check"></i></span>
+                            </div>
+                        </div>
+
+                        <!-- Equipment Info Panel -->
+                        <div class="equipment-info-panel" id="equip-info-panel">
+                            <div class="info-placeholder">
+                                <i class="fas fa-hand-pointer"></i>
+                                <p>Click on equipment to learn about it</p>
+                            </div>
+                            <div class="info-details hidden" id="equip-details">
+                                <h3 id="equip-detail-name"></h3>
+                                <div id="equip-detail-body"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="equip-progress-fill"></div>
+                        </div>
+                        <span class="progress-text" id="equip-progress">0 / 6 explored</span>
+                        <button class="btn-primary hidden" id="equip-next-btn">
+                            <span>Continue to Preparation</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STEP 2: PATIENT PREPARATION -->
+            <section class="lab-step" id="step-2">
+                <div class="step-container">
+                    <div class="section-header">
+                        <i class="fas fa-hand-holding-medical"></i>
+                        <div>
+                            <h2>Patient Preparation & Electrode Placement</h2>
+                            <p>Select a lead-region target, then prepare skin and complete correct ECG electrode placement.</p>
+                        </div>
+                    </div>
+                
+                    <!-- Muscle Selection Panel -->
+                    <div class="muscle-selection-panel" id="muscle-selection-panel">
+                        <div class="panel-header">
+                            <i class="fas fa-user-injured"></i>
+                            <h3>Select a Lead Region to Examine</h3>
+                        </div>
+                        <p class="muscle-instruction">Click a highlighted region to simulate ECG lead/electrode placement planning.</p>
+                        <div class="body-muscle-container">
+                            <div class="body-diagram">
+                                <svg id="body-svg" viewBox="0 0 300 500" class="body-svg">
+                                    <!-- Body outline -->
+                                    <ellipse class="body-head" cx="150" cy="35" rx="30" ry="35"/>
+                                    <rect class="body-neck" x="140" y="60" width="20" height="20"/>
+                                    <path class="body-torso" d="M100,80 L90,180 L100,250 L120,250 L130,190 L150,200 L170,190 L180,250 L200,250 L210,180 L200,80 Z"/>
+                                    
+                                    <!-- Left arm -->
+                                    <path class="body-arm" d="M90,80 L60,100 L45,150 L40,200 L45,205 L55,160 L70,110 L90,90 Z"/>
+                                    <ellipse class="body-hand" cx="42" cy="215" rx="10" ry="15"/>
+                                    
+                                    <!-- Right arm -->
+                                    <path class="body-arm" d="M210,80 L240,100 L255,150 L260,200 L255,205 L245,160 L230,110 L210,90 Z"/>
+                                    <ellipse class="body-hand" cx="258" cy="215" rx="10" ry="15"/>
+                                
+                                <!-- Left leg -->
+                                <path class="body-leg" d="M120,250 L110,350 L105,450 L115,455 L125,350 L135,250 Z"/>
+                                <ellipse class="body-foot" cx="110" cy="465" rx="15" ry="10"/>
+                                
+                                <!-- Right leg -->
+                                <path class="body-leg" d="M180,250 L190,350 L195,450 L185,455 L175,350 L165,250 Z"/>
+                                <ellipse class="body-foot" cx="190" cy="465" rx="15" ry="10"/>
+                                
+                                <!-- Clickable ECG lead/electrode regions -->
+                                <ellipse class="muscle-region" id="lead-ra" cx="65" cy="130" rx="15" ry="25" data-muscle="ra" data-name="RA Electrode (Right Arm)"/>
+                                <ellipse class="muscle-region" id="lead-la" cx="235" cy="130" rx="15" ry="25" data-muscle="la" data-name="LA Electrode (Left Arm)"/>
+                                <ellipse class="muscle-region" id="lead-v1" cx="132" cy="110" rx="9" ry="12" data-muscle="v1" data-name="V1 (4th ICS, Right Sternal Border)"/>
+                                <ellipse class="muscle-region" id="lead-v2" cx="146" cy="108" rx="9" ry="12" data-muscle="v2" data-name="V2 (4th ICS, Left Sternal Border)"/>
+                                <ellipse class="muscle-region" id="lead-v3" cx="160" cy="112" rx="9" ry="12" data-muscle="v3" data-name="V3 (Between V2 and V4)"/>
+                                <ellipse class="muscle-region" id="lead-v4" cx="175" cy="118" rx="9" ry="12" data-muscle="v4" data-name="V4 (5th ICS, Midclavicular)"/>
+                                <ellipse class="muscle-region" id="lead-v5" cx="188" cy="124" rx="9" ry="12" data-muscle="v5" data-name="V5 (Anterior Axillary Line)"/>
+                                <ellipse class="muscle-region" id="lead-v6" cx="201" cy="130" rx="9" ry="12" data-muscle="v6" data-name="V6 (Midaxillary Line)"/>
+                                <ellipse class="muscle-region" id="lead-rl" cx="125" cy="310" rx="15" ry="40" data-muscle="rl" data-name="RL Electrode (Right Leg - Ground)"/>
+                                <ellipse class="muscle-region" id="lead-ll" cx="175" cy="310" rx="15" ry="40" data-muscle="ll" data-name="LL Electrode (Left Leg)"/>
+                            </svg>
+                        </div>
+                        <div class="muscle-info-card" id="muscle-info-card">
+                            <div class="muscle-placeholder">
+                                <span class="big-icon">👆</span>
+                                <p>Click on a highlighted region to see placement details</p>
+                            </div>
+                            <div class="muscle-details hidden" id="muscle-details">
+                                <h4 id="selected-muscle-name">Lead Region</h4>
+                                <div class="muscle-image-container">
+                                    <div class="muscle-diagram" id="muscle-diagram"></div>
+                                </div>
+                                <div class="muscle-info-text" id="muscle-info-text"></div>
+                                <button class="btn-primary" id="select-muscle-btn">Select This Region →</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prep Workspace (shown after muscle selection) -->
+                <div class="prep-workspace hidden" id="prep-workspace">
+                    <div class="selected-muscle-header">
+                        <span>Selected Lead Region: </span>
+                        <strong id="prep-muscle-name">Lead II Setup (RA-LA-RL)</strong>
+                        <button class="btn-small btn-secondary" id="change-muscle-btn">Change Region</button>
+                    </div>
+
+                    <!-- Horizontal Progress Bar -->
+                    <div class="prep-progress-bar">
+                        <div class="prep-step-indicator active" data-step="clean">
+                            <div class="step-circle">
+                                <i class="fas fa-spray-can"></i>
+                            </div>
+                            <span class="step-name">Clean</span>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="prep-step-indicator" data-step="abrade">
+                            <div class="step-circle">
+                                <i class="fas fa-eraser"></i>
+                            </div>
+                            <span class="step-name">Abrade</span>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="prep-step-indicator" data-step="gel">
+                            <div class="step-circle">
+                                <i class="fas fa-droplet"></i>
+                            </div>
+                            <span class="step-name">Gel</span>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="prep-step-indicator" data-step="place">
+                            <div class="step-circle">
+                                <i class="fas fa-plug"></i>
+                            </div>
+                            <span class="step-name">Place</span>
+                        </div>
+                    </div>
+
+                    <!-- Floating Impedance Indicator -->
+                    <div class="floating-impedance" id="floating-impedance">
+                        <div class="impedance-ring">
+                            <svg class="imp-ring-svg" viewBox="0 0 80 80">
+                                <circle cx="40" cy="40" r="35" class="imp-ring-bg"/>
+                                <circle cx="40" cy="40" r="35" class="imp-ring-fill" id="imp-ring-fill"/>
+                            </svg>
+                            <span class="imp-value-center" id="imp-value-float">--</span>
+                        </div>
+                        <div class="impedance-info">
+                            <span class="imp-label">Impedance</span>
+                            <span class="imp-status" id="imp-status-float">Measure pending</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Prep Area -->
+                    <div class="prep-main-area">
+                        <!-- Arm Diagram with animation layers -->
+                        <div class="arm-container" id="arm-container">
+                            <svg id="arm-svg" viewBox="0 0 500 600" class="arm-svg">
+                                <!-- Base skin layer -->
+                                <path class="arm-skin" id="muscle-shape-bg" d="M150,50 Q130,150 120,300 Q115,400 130,500 Q150,570 200,580 L300,580 Q350,570 370,500 Q385,400 380,300 Q370,150 350,50 Z" />
+                                
+                                <!-- Shine overlay for clean effect -->
+                                <path class="skin-shine-layer" id="skin-shine" d="M150,50 Q130,150 120,300 Q115,400 130,500 Q150,570 200,580 L300,580 Q350,570 370,500 Q385,400 380,300 Q370,150 350,50 Z" />
+                                
+                                <!-- Texture overlay for abrasion effect -->
+                                <defs>
+                                    <pattern id="abraded-texture" patternUnits="userSpaceOnUse" width="4" height="4">
+                                        <circle cx="2" cy="2" r="0.5" fill="rgba(239, 68, 68, 0.3)"/>
+                                    </pattern>
+                                    <linearGradient id="shine-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:rgba(255,255,255,0.6)"/>
+                                        <stop offset="50%" style="stop-color:rgba(255,255,255,0.1)"/>
+                                        <stop offset="100%" style="stop-color:rgba(255,255,255,0.4)"/>
+                                    </linearGradient>
+                                    <radialGradient id="gel-glow" cx="50%" cy="50%" r="50%">
+                                        <stop offset="0%" style="stop-color:rgba(59,130,246,0.6)"/>
+                                        <stop offset="100%" style="stop-color:rgba(59,130,246,0)"/>
+                                    </radialGradient>
+                                </defs>
+                                <path class="skin-texture-layer" id="skin-texture" d="M150,50 Q130,150 120,300 Q115,400 130,500 Q150,570 200,580 L300,580 Q350,570 370,500 Q385,400 380,300 Q370,150 350,50 Z" />
+                                
+                                <!-- Muscle underneath (visible on hover) -->
+                                <path class="arm-muscle hidden" id="muscle-shape-inner" d="M170,100 Q160,200 155,320 Q152,400 165,480 Q175,530 210,540 L290,540 Q325,530 335,480 Q348,400 345,320 Q340,200 330,100 Z" />
+                                
+                                <!-- Skin prep zones -->
+                                <circle class="prep-zone" id="prep-zone-1" cx="250" cy="200" r="25" data-zone="ra" />
+                                <circle class="prep-zone" id="prep-zone-2" cx="250" cy="300" r="25" data-zone="la" />
+                                <circle class="prep-zone" id="prep-zone-3" cx="250" cy="450" r="25" data-zone="rl" />
+                                
+                                <!-- Gel shine spots -->
+                                <circle class="gel-shine" id="gel-shine-1" cx="250" cy="200" r="20" />
+                                <circle class="gel-shine" id="gel-shine-2" cx="250" cy="300" r="20" />
+                                <circle class="gel-shine" id="gel-shine-3" cx="250" cy="450" r="20" />
+                                
+                                <!-- Electrode placement targets -->
+                                <circle class="electrode-target hidden" id="target-ra" cx="250" cy="200" r="18" />
+                                <circle class="electrode-target hidden" id="target-la" cx="250" cy="300" r="18" />
+                                <circle class="electrode-target hidden" id="target-rl" cx="250" cy="450" r="18" />
+                                
+                                <!-- Placed electrodes with cables -->
+                                <g class="placed-electrode hidden" id="placed-e-ra">
+                                    <circle cx="250" cy="200" r="16" class="electrode-body"/>
+                                    <text x="250" y="205" class="electrode-text">RA</text>
+                                    <path class="electrode-cable" d="M250,184 Q200,150 150,120 L100,80"/>
+                                </g>
+                                <g class="placed-electrode hidden" id="placed-e-la">
+                                    <circle cx="250" cy="300" r="16" class="electrode-body"/>
+                                    <text x="250" y="305" class="electrode-text">LA</text>
+                                    <path class="electrode-cable" d="M250,284 Q200,250 150,220 L100,180"/>
+                                </g>
+                                <g class="placed-electrode hidden" id="placed-e-rl">
+                                    <circle cx="250" cy="450" r="16" class="electrode-body"/>
+                                    <text x="250" y="455" class="electrode-text">RL</text>
+                                    <path class="electrode-cable" d="M250,434 Q200,400 150,380 L100,350"/>
+                                </g>
+                                
+                                <!-- Labels with full electrode names -->
+                                <g class="zone-label-group" id="label-active">
+                                    <text x="310" y="195" class="zone-label zone-label-name">RA - Right Arm</text>
+                                    <text x="310" y="212" class="zone-label zone-label-desc">(Limb Lead Electrode)</text>
+                                </g>
+                                <g class="zone-label-group" id="label-reference">
+                                    <text x="310" y="295" class="zone-label zone-label-name">LA - Left Arm</text>
+                                    <text x="310" y="312" class="zone-label zone-label-desc">(Limb Lead Electrode)</text>
+                                </g>
+                                <g class="zone-label-group" id="label-ground">
+                                    <text x="310" y="445" class="zone-label zone-label-name">RL - Ground/Reference</text>
+                                    <text x="310" y="462" class="zone-label zone-label-desc">(Right Leg Electrode)</text>
+                                </g>
+                                
+                                <!-- Muscle label -->
+                                <text x="100" y="320" class="muscle-label hidden" id="muscle-label-text" transform="rotate(-90,100,320)">Selected Lead Setup</text>
+                            </svg>
+                        </div>
+
+                        <!-- Collapsible Step Cards -->
+                        <div class="prep-tools" id="prep-tools">
+                            <!-- Step 1: Clean -->
+                            <div class="collapsible-step active" id="prep-step-1" data-step="clean">
+                                <div class="step-header" onclick="togglePrepStep(1)">
+                                    <div class="step-header-left">
+                                        <div class="tool-icon draggable" draggable="true" id="drag-swab">
+                                            <span class="tool-emoji">🧴</span>
+                                        </div>
+                                        <div class="step-title">
+                                            <strong>Clean Skin</strong>
+                                            <span class="step-subtitle">Alcohol swab to remove oils</span>
+                                        </div>
+                                    </div>
+                                    <div class="step-header-right">
+                                        <div class="site-dots">
+                                            <span class="dot" id="clean-dot-1"></span>
+                                            <span class="dot" id="clean-dot-2"></span>
+                                            <span class="dot" id="clean-dot-3"></span>
+                                        </div>
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </div>
+                                </div>
+                                <div class="step-body">
+                                    <p class="step-instruction">Drag the alcohol swab to each electrode site to clean the skin surface.</p>
+                                    <div class="substep-tracker">
+                                        <div class="substep-item" id="clean-item-1">
+                                            <span class="substep-dot"></span>
+                                            <span class="substep-label">RA Site</span>
+                                        </div>
+                                        <div class="substep-item" id="clean-item-2">
+                                            <span class="substep-dot"></span>
+                                            <span class="substep-label">LA Site</span>
+                                        </div>
+                                        <div class="substep-item" id="clean-item-3">
+                                            <span class="substep-dot"></span>
+                                            <span class="substep-label">RL Site</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 2: Abrade -->
+                            <div class="collapsible-step" id="prep-step-2" data-step="abrade">
+                                <div class="step-header" onclick="togglePrepStep(2)">
+                                    <div class="step-header-left">
+                                        <div class="tool-icon draggable" draggable="true" id="drag-abrasive">
+                                            <span class="tool-emoji">🪒</span>
+                                        </div>
+                                        <div class="step-title">
+                                            <strong>Abrade Surface</strong>
+                                            <span class="step-subtitle">Reduce skin impedance</span>
+                                        </div>
+                                    </div>
+                                    <div class="step-header-right">
+                                        <div class="site-dots">
+                                            <span class="dot" id="abrade-dot-1"></span>
+                                            <span class="dot" id="abrade-dot-2"></span>
+                                            <span class="dot" id="abrade-dot-3"></span>
+                                        </div>
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </div>
+                                </div>
+                                <div class="step-body">
+                                    <p class="step-instruction">Gently abrade each site to reduce impedance below 5 kΩ.</p>
+                                    <div class="substep-tracker">
+                                        <div class="substep-item" id="abrade-item-1">
+                                            <span class="substep-dot"></span>
+                                            <span class="substep-label">RA Site</span>
+                                        </div>
+                                        <div class="substep-item" id="abrade-item-2">
+                                            <span class="substep-dot"></span>
+                                            <span class="substep-label">LA Site</span>
+                                        </div>
+                                        <div class="substep-item" id="abrade-item-3">
+                                            <span class="substep-dot"></span>
+                                            <span class="substep-label">RL Site</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Gel -->
+                            <div class="collapsible-step" id="prep-step-3" data-step="gel">
+                                <div class="step-header" onclick="togglePrepStep(3)">
+                                    <div class="step-header-left">
+                                        <div class="tool-icon draggable" draggable="true" id="drag-gel">
+                                            <span class="tool-emoji">💧</span>
+                                        </div>
+                                        <div class="step-title">
+                                            <strong>Apply Gel</strong>
+                                            <span class="step-subtitle">Conductive gel for contact</span>
+                                        </div>
+                                    </div>
+                                    <div class="step-header-right">
+                                        <div class="site-dots">
+                                            <span class="dot" id="gel-dot-1"></span>
+                                            <span class="dot" id="gel-dot-2"></span>
+                                            <span class="dot" id="gel-dot-3"></span>
+                                        </div>
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </div>
+                                </div>
+                                <div class="step-body">
+                                    <p class="step-instruction">Apply conductive gel to each site for optimal electrical contact.</p>
+                                    <div class="substep-tracker">
+                                        <div class="substep-item" id="gel-item-1">
+                                            <span class="substep-dot"></span>
+                                            <span class="substep-label">RA Site</span>
+                                        </div>
+                                        <div class="substep-item" id="gel-item-2">
+                                            <span class="substep-dot"></span>
+                                            <span class="substep-label">LA Site</span>
+                                        </div>
+                                        <div class="substep-item" id="gel-item-3">
+                                            <span class="substep-dot"></span>
+                                            <span class="substep-label">RL Site</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 4: Place Electrodes -->
+                            <div class="collapsible-step" id="prep-step-4" data-step="place">
+                                <div class="step-header" onclick="togglePrepStep(4)">
+                                    <div class="step-header-left">
+                                        <div class="electrode-tray" id="electrode-tray">
+                                            <div class="electrode-pick" draggable="true" id="drag-e-ra" data-type="ra">RA</div>
+                                            <div class="electrode-pick" draggable="true" id="drag-e-la" data-type="la">LA</div>
+                                            <div class="electrode-pick" draggable="true" id="drag-e-rl" data-type="rl">RL</div>
+                                        </div>
+                                        <div class="step-title">
+                                            <strong>Place Electrodes</strong>
+                                            <span class="step-subtitle">Attach to prepared sites</span>
+                                        </div>
+                                    </div>
+                                    <div class="step-header-right">
+                                        <div class="site-dots">
+                                            <span class="dot" id="place-dot-ra"></span>
+                                            <span class="dot" id="place-dot-la"></span>
+                                            <span class="dot" id="place-dot-rl"></span>
+                                        </div>
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </div>
+                                </div>
+                                <div class="step-body">
+                                    <p class="step-instruction">Drag each electrode to its matching target zone.</p>
+                                    <div class="electrode-guide">
+                                        <span class="guide-item"><span class="guide-dot e1"></span> RA → Right arm site</span>
+                                        <span class="guide-item"><span class="guide-dot e2"></span> LA → Left arm site</span>
+                                        <span class="guide-item"><span class="guide-dot gnd"></span> RL → Right leg ground site</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="btn-primary hidden" id="prep-next-btn">
+                                <span>Continue to Calibration</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STEP 3: CALIBRATION -->
+            <section class="lab-step" id="step-3">
+                <div class="step-container">
+                    <div class="section-header">
+                        <i class="fas fa-sliders-h"></i>
+                        <div>
+                            <h2>System Calibration</h2>
+                            <p>Configure the ECG system parameters for optimal signal recording.</p>
+                        </div>
+                    </div>
+                
+                    <!-- Calibration Explanation Panel -->
+                    <div class="calib-explanation">
+                        <div class="panel-header">
+                            <i class="fas fa-info-circle"></i>
+                            <h3>Understanding ECG Settings</h3>
+                        </div>
+                        <div class="calib-info-grid">
+                            <div class="calib-info-item">
+                                <i class="fas fa-volume-up"></i>
+                                <strong>Gain (Amplification)</strong>
+                                <p>ECG signals are very small (microvolts). The amplifier increases the signal magnitude. Surface ECG typically uses 1000-5000x gain.</p>
+                            </div>
+                            <div class="calib-info-item">
+                                <i class="fas fa-filter"></i>
+                                <strong>High-Pass Filter</strong>
+                                <p>Removes slow baseline drift and motion artifacts by blocking frequencies below the cutoff. Set to 10-20 Hz for surface ECG.</p>
+                            </div>
+                            <div class="calib-info-item">
+                                <i class="fas fa-filter"></i>
+                                <strong>Low-Pass Filter</strong>
+                                <p>Removes high-frequency noise and prevents aliasing. Most ECG energy is below 500 Hz. Set to 450-500 Hz for comprehensive signal capture.</p>
+                            </div>
+                            <div class="calib-info-item">
+                                <i class="fas fa-plug"></i>
+                                <strong>Notch Filter (50/60 Hz)</strong>
+                                <p>Eliminates power line interference that appears as a constant hum in the signal. Always enable unless studying frequencies near 50/60 Hz.</p>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="calibration-workspace">
+                        <div class="calib-machine">
+                            <div class="calib-display">
+                                <canvas id="calib-canvas" width="700" height="250"></canvas>
+                                <div class="calib-readouts">
+                                    <div class="readout">
+                                        <span class="readout-label">Baseline</span>
+                                        <span class="readout-value" id="baseline-val">-- µV</span>
+                                    </div>
+                                    <div class="readout">
+                                        <span class="readout-label">Noise</span>
+                                        <span class="readout-value" id="noise-val">-- µV RMS</span>
+                                    </div>
+                                    <div class="readout">
+                                        <span class="readout-label">Impedance</span>
+                                        <span class="readout-value" id="calib-imp-val">-- kΩ</span>
+                                    </div>
+                                    <div class="readout">
+                                        <span class="readout-label">SNR</span>
+                                        <span class="readout-value" id="snr-val">-- dB</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="calib-controls">
+                                <div class="control-group">
+                                    <label>Gain (Amplification)</label>
+                                    <input type="range" id="gain-slider" min="100" max="10000" value="1000" step="100">
+                                    <span id="gain-display">1000x</span>
+                                    <div class="control-hint">Typical: 1000x for surface ECG</div>
+                                </div>
+                                <div class="control-group">
+                                    <label>High-Pass Filter (Hz)</label>
+                                    <input type="range" id="hp-filter" min="1" max="100" value="20" step="1">
+                                    <span id="hp-display">20 Hz</span>
+                                    <div class="control-hint">Removes motion artifacts. Recommended: 10-20 Hz</div>
+                                </div>
+                                <div class="control-group">
+                                    <label>Low-Pass Filter (Hz)</label>
+                                    <input type="range" id="lp-filter" min="100" max="2000" value="500" step="50">
+                                    <span id="lp-display">500 Hz</span>
+                                    <div class="control-hint">Anti-aliasing. Recommended: 450-500 Hz</div>
+                                </div>
+                                <div class="control-group">
+                                    <label>Notch Filter (50/60 Hz)</label>
+                                    <div class="toggle-group">
+                                        <button class="toggle-btn active" id="notch-on">ON</button>
+                                        <button class="toggle-btn" id="notch-off">OFF</button>
+                                    </div>
+                                    <div class="control-hint">Removes power line interference</div>
+                                </div>
+                                <div class="control-group">
+                                    <label>Sampling Rate (Hz)</label>
+                                    <select id="sampling-rate">
+                                        <option value="500">500 Hz</option>
+                                        <option value="1000" selected>1000 Hz</option>
+                                        <option value="2000">2000 Hz</option>
+                                        <option value="5000">5000 Hz</option>
+                                    </select>
+                                    <div class="control-hint">Must be ≥ 2× low-pass filter (Nyquist)</div>
+                                </div>
+                                <button class="btn-primary" id="run-calib-btn">
+                                    <i class="fas fa-play"></i>
+                                    <span>Run Calibration Test</span>
+                                </button>
+                                <button class="btn-primary hidden" id="calib-next-btn">
+                                    <span>Continue to Recording</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STEP 4: RECORDING -->
+            <section class="lab-step" id="step-4">
+                <div class="step-container">
+                    <div class="section-header">
+                        <i class="fas fa-wave-square"></i>
+                        <div>
+                            <h2>ECG Signal Recording</h2>
+                            <p>Record ECG signals under different rhythm conditions for comparison and analysis.</p>
+                        </div>
+                    </div>
+
+                    <div class="recording-workspace">
+                        <!-- Left Panel: Signal Display -->
+                        <div class="recording-display">
+                            <div class="display-header">
+                                <div class="rec-indicator hidden" id="rec-indicator">
+                                    <span class="rec-dot"></span> REC
+                                </div>
+                                <div class="contraction-controls">
+                                    <label>Rhythm Context:</label>
+                                    <div class="contraction-btns">
+                                        <button class="contract-btn active" data-type="rest">Normal</button>
+                                        <button class="contract-btn" data-type="light">Mild Tachy</button>
+                                        <button class="contract-btn" data-type="moderate">Mild Brady</button>
+                                        <button class="contract-btn" data-type="max">Irregular</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Main ECG Signal Canvas -->
+                            <div class="signal-display">
+                                <canvas id="ecg-canvas" width="900" height="300"></canvas>
+                                <div class="signal-annotations" id="signal-annotations"></div>
+                            </div>
+                            <div class="signal-scale-info">
+                                <span id="scale-info">Scale: 1 div = 0.5 mV | Time: 100 ms/div</span>
+                            </div>
+                        
+                            <!-- Signal Speed Control -->
+                            <div class="signal-speed-control">
+                                <label>Signal Speed:</label>
+                                <div class="speed-buttons">
+                                    <button class="speed-btn" data-speed="0.25">0.25x</button>
+                                    <button class="speed-btn active" data-speed="0.5">0.5x</button>
+                                    <button class="speed-btn" data-speed="1">1x</button>
+                                    <button class="speed-btn" data-speed="2">2x</button>
+                                </div>
+                                <span class="speed-hint">Slower speed for detailed observation</span>
+                            </div>
+
+                            <!-- Real-time metrics -->
+                            <div class="rt-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">RMS Amplitude</span>
+                                    <span class="metric-value" id="rms-value">0.00 mV</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Peak Amplitude</span>
+                                    <span class="metric-value" id="peak-value">0.00 mV</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Mean Frequency</span>
+                                    <span class="metric-value" id="freq-value">0 Hz</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Motor Units Active</span>
+                                    <span class="metric-value" id="mu-value">0</span>
+                                </div>
+                            </div>
+
+                            <!-- Recording Controls -->
+                            <div class="rec-controls">
+                                <button class="btn-record" id="record-btn">
+                                    <i class="fas fa-circle"></i>
+                                    <span>Start Recording</span>
+                                </button>
+                                <button class="btn-stop hidden" id="stop-btn">
+                                    <i class="fas fa-stop"></i>
+                                    <span>Stop</span>
+                                </button>
+                                <button class="btn-save hidden" id="save-btn">
+                                    <i class="fas fa-save"></i>
+                                    <span>Save Trial</span>
+                                </button>
+                                <div class="trials-saved" id="trials-saved">
+                                    Trials saved: <span id="trial-count">0</span>/4
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Condition & Controls -->
+                        <div class="recording-sidebar">
+                            <!-- Condition selector -->
+                            <div class="condition-selector-panel">
+                                <h4><i class="fas fa-user-injured"></i> Subject Condition</h4>
+                                <!-- Hidden select for compatibility -->
+                                <select id="condition-select" class="hidden">
+                                    <option value="normal">Healthy Subject</option>
+                                    <option value="myopathy">Myopathy Patient</option>
+                                    <option value="neuropathy">Neuropathy Patient</option>
+                                    <option value="als">ALS Patient</option>
+                                </select>
+                                <div class="condition-cards-vertical" id="condition-cards">
+                                    <div class="condition-card selected" data-condition="normal">
+                                        <div class="condition-card-header">
+                                            <i class="fas fa-user-check"></i>
+                                            <span class="condition-name">Healthy</span>
+                                            <span class="condition-indicator healthy"></span>
+                                        </div>
+                                    </div>
+                                    <div class="condition-card" data-condition="myopathy">
+                                        <div class="condition-card-header">
+                                            <i class="fas fa-user"></i>
+                                            <span class="condition-name">Myopathy</span>
+                                            <span class="condition-indicator myopathy"></span>
+                                        </div>
+                                    </div>
+                                    <div class="condition-card" data-condition="neuropathy">
+                                        <div class="condition-card-header">
+                                            <i class="fas fa-user"></i>
+                                            <span class="condition-name">Neuropathy</span>
+                                            <span class="condition-indicator neuropathy"></span>
+                                        </div>
+                                    </div>
+                                    <div class="condition-card" data-condition="als">
+                                        <div class="condition-card-header">
+                                            <i class="fas fa-user"></i>
+                                            <span class="condition-name">ALS</span>
+                                            <span class="condition-indicator als"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Condition Description Panel -->
+                            <div class="condition-info-panel" id="condition-info">
+                                <h4><i class="fas fa-info-circle"></i> <span id="condition-title">Healthy Subject</span></h4>
+                                <p id="condition-desc">Normal motor unit recruitment and firing patterns. ECG amplitude increases smoothly with force.</p>
+                                <div class="condition-characteristics" id="condition-chars"></div>
+                            </div>
+
+                            <!-- Force gauge -->
+                            <div class="force-gauge-container">
+                                <h4><i class="fas fa-hand-rock"></i> Muscle Force</h4>
+                                <p class="force-instruction">Use slider to control force level.</p>
+                                <div class="force-gauge">
+                                    <div class="gauge-bg">
+                                        <div class="gauge-fill" id="force-fill"></div>
+                                    </div>
+                                    <span class="gauge-value" id="force-value">0%</span>
+                                </div>
+                                <input type="range" id="force-slider" min="0" max="100" value="0">
+                                <button class="btn-primary hidden" id="rec-next-btn">
+                                    <span>Continue to Analysis</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STEP 5: ANALYSIS -->
+            <section class="lab-step" id="step-5">
+                <div class="step-container">
+                    <div class="section-header">
+                        <i class="fas fa-chart-line"></i>
+                        <div>
+                            <h2>Signal Analysis</h2>
+                            <p>Analyze your recorded ECG data using different signal processing techniques.</p>
+                        </div>
+                    </div>
+
+                    <div class="analysis-workspace">
+                        <div class="analysis-tabs">
+                            <button class="analysis-tab active" data-tab="time">
+                                <i class="fas fa-clock"></i>
+                                <span>Time Domain</span>
+                            </button>
+                            <button class="analysis-tab" data-tab="frequency">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Frequency Domain (FFT)</span>
+                            </button>
+                            <button class="analysis-tab" data-tab="rms">
+                                <i class="fas fa-chart-area"></i>
+                                <span>RMS Envelope</span>
+                            </button>
+                            <button class="analysis-tab" data-tab="comparison">
+                                <i class="fas fa-columns"></i>
+                                <span>Comparison</span>
+                            </button>
+                        </div>
+
+                        <div class="analysis-panels">
+                            <!-- Time Domain -->
+                            <div class="analysis-panel active" id="panel-time">
+                                <canvas id="analysis-time-canvas" width="850" height="300"></canvas>
+                                <div class="analysis-controls-row">
+                                    <label>Trial: </label>
+                                    <select id="trial-select-time">
+                                        <option value="normal">Healthy - Rest→MVC</option>
+                                        <option value="myopathy">Myopathy</option>
+                                        <option value="neuropathy">Neuropathy</option>
+                                        <option value="als">ALS</option>
+                                    </select>
+                                    <label>Zoom: </label>
+                                    <input type="range" id="time-zoom" min="1" max="20" value="1">
+                                </div>
+                                <div class="analysis-stats" id="time-stats"></div>
+                            </div>
+
+                            <!-- Frequency Domain -->
+                            <div class="analysis-panel" id="panel-frequency">
+                                <canvas id="analysis-freq-canvas" width="850" height="300"></canvas>
+                                <div class="analysis-controls-row">
+                                    <label>Trial: </label>
+                                    <select id="trial-select-freq">
+                                        <option value="normal">Healthy</option>
+                                        <option value="myopathy">Myopathy</option>
+                                        <option value="neuropathy">Neuropathy</option>
+                                        <option value="als">ALS</option>
+                                    </select>
+                                    <label>Window: </label>
+                                    <select id="fft-window">
+                                        <option value="hanning">Hanning</option>
+                                        <option value="hamming">Hamming</option>
+                                        <option value="rectangular">Rectangular</option>
+                                    </select>
+                                </div>
+                                <div class="analysis-stats" id="freq-stats"></div>
+                            </div>
+
+                            <!-- RMS Envelope -->
+                            <div class="analysis-panel" id="panel-rms">
+                                <canvas id="analysis-rms-canvas" width="850" height="300"></canvas>
+                                <div class="analysis-controls-row">
+                                    <label>Window Size (ms): </label>
+                                    <input type="range" id="rms-window" min="10" max="500" value="100" step="10">
+                                    <span id="rms-window-val">100ms</span>
+                                </div>
+                                <div class="analysis-stats" id="rms-stats"></div>
+                            </div>
+
+                            <!-- Comparison -->
+                            <div class="analysis-panel" id="panel-comparison">
+                                <div class="comparison-grid">
+                                    <div class="comparison-cell">
+                                        <h4><span class="condition-dot healthy"></span> Normal</h4>
+                                        <canvas id="comp-normal" width="400" height="200"></canvas>
+                                        <div class="comp-stats" id="comp-stats-normal"></div>
+                                    </div>
+                                    <div class="comparison-cell">
+                                        <h4><span class="condition-dot myopathy"></span> Myopathy</h4>
+                                        <canvas id="comp-myopathy" width="400" height="200"></canvas>
+                                        <div class="comp-stats" id="comp-stats-myopathy"></div>
+                                    </div>
+                                    <div class="comparison-cell">
+                                        <h4><span class="condition-dot neuropathy"></span> Neuropathy</h4>
+                                        <canvas id="comp-neuropathy" width="400" height="200"></canvas>
+                                        <div class="comp-stats" id="comp-stats-neuropathy"></div>
+                                    </div>
+                                    <div class="comparison-cell">
+                                        <h4><span class="condition-dot als"></span> ALS</h4>
+                                        <canvas id="comp-als" width="400" height="200"></canvas>
+                                        <div class="comp-stats" id="comp-stats-als"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Download Results Section -->
+                    <div class="download-section">
+                        <button class="btn-download" id="download-results-btn">
+                            <i class="fas fa-download"></i>
+                            <span>Download Results Report</span>
+                        </button>
+                        <button class="btn-download-data" id="download-data-btn">
+                            <i class="fas fa-file-csv"></i>
+                            <span>Download Raw Data (CSV)</span>
+                        </button>
+                    </div>
+
+                    <div class="analysis-summary">
+                        <div class="summary-card">
+                            <i class="fas fa-check-circle"></i>
+                            <h4>Experiment Complete</h4>
+                            <p>You have successfully completed all steps of the ECG virtual laboratory experiment.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- GLOSSARY MODAL -->
+        <div class="modal-overlay hidden" id="glossary-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-book-medical"></i> ECG Glossary</h3>
+                    <button class="modal-close" id="close-glossary">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="glossary-body">
+                    <div class="glossary-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="glossary-search-input" placeholder="Search terms...">
+                    </div>
+                    <div class="glossary-list" id="glossary-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="ecg-engine.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
