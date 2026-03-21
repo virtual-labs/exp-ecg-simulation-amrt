@@ -1,0 +1,18 @@
+
+/home/runner/work/exp-ecg-simulation-amrt/exp-ecg-simulation-amrt/experiment/simulation/app.js
+  1043:19  warning  'calibAnimFrame' is defined but never used  no-unused-vars
+  1088:15  warning  'hp' is assigned a value but never used     no-unused-vars
+  1089:15  warning  'lp' is assigned a value but never used     no-unused-vars
+  1090:15  warning  'sr' is assigned a value but never used     no-unused-vars
+  1307:71  warning  'scale' is defined but never used           no-unused-vars
+  1350:35  warning  'idx' is defined but never used             no-unused-vars
+  1838:14  warning  'getToolName' is defined but never used     no-unused-vars
+  1912:10  warning  'togglePrepStep' is defined but never used  no-unused-vars
+  1953:41  warning  'status' is defined but never used          no-unused-vars
+
+/home/runner/work/exp-ecg-simulation-amrt/exp-ecg-simulation-amrt/experiment/simulation/ecg-engine.js
+  179:29  warning  'variationSeed' is assigned a value but never used  no-unused-vars
+  427:15  warning  'params' is assigned a value but never used         no-unused-vars
+
+✖ 11 problems (0 errors, 11 warnings)
+
