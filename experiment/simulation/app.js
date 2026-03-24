@@ -2,8 +2,7 @@
    ECG Virtual Lab — Main Application
    ========================================= */
 
-(function () {
-    'use strict';
+'use strict';
 
     // ======== STATE ========
     const state = {
@@ -29,6 +28,8 @@
         signalSpeed: 0.5,
         completedSteps: new Set([0])
     };
+
+    const REQUIRED_ELECTRODES = ['ra', 'la', 'rl', 'll', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6'];
 
     // Lead/electrode region information database
     const muscleInfo = {
@@ -123,7 +124,7 @@
         simulateLoading();
         setupEventListeners();
         setupGlossary();
-        drawMUAPAnimation();
+        drawECGPreviewAnimation();
         setupMuscleSelection();
         setupStepNavigation();
         setupConditionCards();
@@ -187,7 +188,7 @@
         switch (state.currentStep) {
             case 0: return true;
             case 1: return state.equipmentExplored.size >= 6;
-            case 2: return state.prepState.placed.size >= 3;
+            case 2: return state.prepState.placed.size >= REQUIRED_ELECTRODES.length;
             case 3: return state.calibrated;
             case 4: return state.trialsSaved >= 1;
             case 5: return true;
@@ -263,7 +264,8 @@
 
     function updateGuide(step) {
         const guideEl = document.getElementById('guide-content');
-        const muscleName = state.selectedMuscle ? muscleInfo[state.selectedMuscle]?.name : 'a lead region';
+        if (!guideEl) return;
+        const muscleName = state.selectedMuscle ? muscleInfo[state.selectedMuscle]?.name : 'standard ECG lead setup (RA-LA-RL)';
         const guides = {
             0: `<p>Welcome to the ECG Virtual Laboratory!</p>
                 <div class="guide-step">Review the basics of ECG waveform morphology before starting the practical steps.</div>
@@ -272,17 +274,27 @@
                 <div class="guide-step">Click on each item on the lab bench to learn its purpose and function.</div>
                 <div class="guide-warning">⚠️ You must explore ALL 6 items before proceeding.</div>
                 <div class="guide-tip">💡 In a real lab, always inspect equipment before starting any recording.</div>`,
-            2: `<p>Select a lead region and prepare for electrode placement.</p>
-                <div class="guide-step">First, click on a highlighted body region to begin ECG lead placement setup.</div>
-                <div class="guide-step">Then follow the 4-step preparation process:</div>
+            2: `<p>Prepare all 10 electrode sites for 12-lead ECG.</p>
+                <div class="guide-step">Follow the 4-step preparation process:</div>
                 <ol style="padding-left:18px; color: var(--text-secondary); font-size: 0.85rem;">
                     <li>Clean with alcohol swabs</li>
                     <li>Abrade to reduce impedance</li>
                     <li>Apply conductive gel</li>
-                    <li>Place electrodes correctly</li>
+                    <li>Place all 10 electrodes (RA, LA, RL, LL, V1-V6)</li>
                 </ol>
-                <div class="guide-warning">⚠️ Drag each tool to ALL THREE electrode sites.</div>
-                <div class="guide-tip">💡 Target impedance: < 5 kΩ. Poor prep = noisy signals!</div>`,
+                <div class="guide-warning">⚠️ Single drag behavior enabled: drop each prep tool once on any zone to apply to all 10 sites.</div>
+                <div class="guide-tip">💡 12-lead electrode landmarks:
+                    <br>• RA: Right Arm (wrist/forearm)
+                    <br>• LA: Left Arm (wrist/forearm)
+                    <br>• RL: Right Leg (ankle) - Ground reference
+                    <br>• LL: Left Leg (ankle)
+                    <br>• V1: 4th ICS right sternal border
+                    <br>• V2: 4th ICS left sternal border
+                    <br>• V3: Midpoint between V2 and V4
+                    <br>• V4: 5th ICS midclavicular line
+                    <br>• V5: Anterior axillary line (V4 level)
+                    <br>• V6: Midaxillary line (V4 level)
+                    <br>• Target impedance: < 5 kΩ</div>`,
             3: `<p>Configure the ECG system for optimal recording.</p>
                 <div class="guide-step">Adjust gain, filters, and sampling rate, then run calibration.</div>
                 <div class="guide-tip">💡 Recommended settings:
@@ -398,7 +410,10 @@
             cleaned: new Set(),
             abraded: new Set(),
             gelled: new Set(),
-            placed: new Set()
+            placed: new Set(),
+            validationScores: {},
+            placementQuality: 0,
+            selectedElectrode: null
         };
         // Reset visual states
         document.querySelectorAll('.prep-zone').forEach(z => {
@@ -413,6 +428,10 @@
         document.querySelectorAll('.electrode-pick').forEach(e => e.classList.remove('placed'));
         document.getElementById('prep-next-btn').classList.add('hidden');
         document.getElementById('impedance-display').classList.add('hidden');
+        const validationPanel = document.getElementById('validation-panel');
+        if (validationPanel) validationPanel.classList.add('hidden');
+        const threadLayer = document.getElementById('electrode-thread-layer');
+        if (threadLayer) threadLayer.innerHTML = '';
     }
 
     // ======== CONDITION CARDS (Step 4) ========
@@ -552,9 +571,9 @@
         });
     }
 
-    // ======== MUAP ANIMATION (Intro) ========
-    function drawMUAPAnimation() {
-        const canvas = document.getElementById('muap-canvas');
+    // ======== ECG PREVIEW ANIMATION (Intro) ========
+    function drawECGPreviewAnimation() {
+        const canvas = document.getElementById('ecg-preview-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         let offset = 0;
@@ -573,7 +592,7 @@
                 ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
             }
 
-            // Draw MUAP
+            // Draw simplified moving ECG cycle preview.
             ctx.strokeStyle = '#22d3ee';
             ctx.lineWidth = 2;
             ctx.shadowColor = '#22d3ee';
@@ -608,7 +627,7 @@
         'equip-ecg': {
             name: 'ECG Amplifier System',
             html: `<h4>Purpose</h4>
-            <p>Amplifies the tiny electrical signals (50 µV - 3 mV typical for surface ECG) generated by muscles to measurable levels.</p>
+            <p>Amplifies the tiny electrical signals (50 µV - 3 mV typical for surface ECG) generated by the heart to measurable levels.</p>
             <h4>Key Specifications</h4>
             <ul>
                 <li><strong>Input Impedance:</strong> > 100 MΩ (to minimize signal loss)</li>
@@ -624,17 +643,17 @@
         'equip-electrodes': {
             name: 'Surface Electrodes (Ag/AgCl)',
             html: `<h4>Purpose</h4>
-            <p>Detect the voltage changes on the skin surface caused by underlying muscle activity.</p>
+            <p>Detect voltage changes on the skin surface caused by cardiac electrical activity.</p>
             <h4>Three Electrode Configuration</h4>
             <ul>
-                <li><strong>Active (+):</strong> Placed over the muscle belly (midpoint)</li>
-                <li><strong>Reference (−):</strong> Placed along the muscle, 2-4 cm from active</li>
-                <li><strong>Ground (G):</strong> Placed on electrically neutral tissue (bone prominence)</li>
+                <li><strong>RA:</strong> Right arm limb lead</li>
+                <li><strong>LA:</strong> Left arm limb lead</li>
+                <li><strong>RL (Ground):</strong> Right leg reference/ground</li>
             </ul>
             <h4>Material: Silver/Silver Chloride (Ag/AgCl)</h4>
             <p>Provides stable electrode-skin interface with low noise and minimal polarization artifact. The AgCl layer acts as a reversible electrode.</p>
             <h4>Inter-Electrode Distance</h4>
-            <p>Typically <strong>2 cm</strong> between active and reference. Smaller = more localized signal. Larger = picks up more motor units.</p>`
+            <p>For limb-lead ECG, use standard anatomical sites and maintain consistent bilateral placement for repeatability.</p>`
         },
         'equip-gel': {
             name: 'Conductive Gel',
@@ -729,12 +748,11 @@
         }
     }
 
-    // ======== PREPARATION (Step 2) ========
     function setupPrepDragDrop() {
         const zones = document.querySelectorAll('.prep-zone');
         const armContainer = document.getElementById('arm-container');
 
-        // Make zones visually highlight when dragging over
+        // Single-drag prep behavior: dropping current prep tool on any zone applies phase to all sites.
         zones.forEach(zone => {
             zone.addEventListener('dragenter', (e) => {
                 e.preventDefault();
@@ -750,24 +768,29 @@
             zone.addEventListener('drop', (e) => {
                 e.preventDefault();
                 zone.classList.remove('drag-hover');
-                const zoneType = zone.dataset.zone;
-                applyPrepToZone(zoneType, state.prepState.currentPhase);
+                const isElectrode = e.dataTransfer.types.includes('electrode-type');
+                if (isElectrode) return;
+                applyPrepPhaseGlobally(state.prepState.currentPhase);
             });
-            // Click-to-apply for mobile
-            zone.addEventListener('click', () => handleZoneClick(zone));
         });
 
         // Fallback: drop on container
         armContainer.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'copy';
+            const isElectrode = e.dataTransfer.types.includes('electrode-type');
+            if (!isElectrode) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+            }
         });
 
         armContainer.addEventListener('drop', (e) => {
             e.preventDefault();
-            // Remove all drag-hover classes
             zones.forEach(z => z.classList.remove('drag-hover'));
-            handlePrepDrop(e);
+
+            const isElectrode = e.dataTransfer.types.includes('electrode-type');
+            if (!isElectrode) {
+                applyPrepPhaseGlobally(state.prepState.currentPhase);
+            }
         });
 
         // Add visual feedback when dragging tools
@@ -776,7 +799,8 @@
             drag.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text/plain', drag.id);
                 drag.classList.add('dragging');
-                // Highlight valid zones
+                e.dataTransfer.setData('prep-tool', drag.id);
+                console.log('prep dragstart tool:', drag.id, 'phase:', state.prepState.currentPhase);
                 highlightValidZones(state.prepState.currentPhase);
             });
             drag.addEventListener('dragend', () => {
@@ -808,80 +832,61 @@
         });
     }
 
-    function handlePrepDrop(e) {
-        const phase = state.prepState.currentPhase;
-        // Determine which zone was dropped on
-        const svg = document.getElementById('arm-svg');
-        const rect = svg.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width * 500;
-        const y = (e.clientY - rect.top) / rect.height * 600;
-
-        // Check proximity to zones
-        const zonePositions = [
-            { id: 'ra', cx: 250, cy: 200 },
-            { id: 'la', cx: 250, cy: 300 },
-            { id: 'rl', cx: 250, cy: 450 }
-        ];
-
-        let closestZone = null;
-        let closestDist = Infinity;
-        zonePositions.forEach(z => {
-            const dist = Math.sqrt(Math.pow(x - z.cx, 2) + Math.pow(y - z.cy, 2));
-            if (dist < closestDist && dist < 60) {
-                closestDist = dist;
-                closestZone = z.id;
-            }
-        });
-
-        if (closestZone) {
-            applyPrepToZone(closestZone, phase);
-        }
-    }
-
-    function handleZoneClick(zone) {
-        const zoneType = zone.dataset.zone;
-        applyPrepToZone(zoneType, state.prepState.currentPhase);
-    }
-
-    function applyPrepToZone(zoneType, phase) {
+    function applyPrepPhaseGlobally(phase) {
+        if (!['clean', 'abrade', 'gel'].includes(phase)) return;
         const prep = state.prepState;
 
-        if (phase === 'clean' && !prep.cleaned.has(zoneType)) {
-            prep.cleaned.add(zoneType);
-            updateZoneVisual(zoneType, 'cleaned');
-            updatePrepDot('clean', prep.cleaned.size);
-            if (prep.cleaned.size >= 3) advancePrepPhase('abrade');
-        } else if (phase === 'abrade' && prep.cleaned.has(zoneType) && !prep.abraded.has(zoneType)) {
-            prep.abraded.add(zoneType);
-            updateZoneVisual(zoneType, 'abraded');
-            updatePrepDot('abrade', prep.abraded.size);
-            showImpedance(zoneType);
-            if (prep.abraded.size >= 3) advancePrepPhase('gel');
-        } else if (phase === 'gel' && prep.abraded.has(zoneType) && !prep.gelled.has(zoneType)) {
-            prep.gelled.add(zoneType);
-            updateZoneVisual(zoneType, 'gelled');
-            updatePrepDot('gel', prep.gelled.size);
-            if (prep.gelled.size >= 3) advancePrepPhase('place');
-        } else if (phase === 'place') {
-            // Electrode placement is handled by dragging specific electrodes
+        if (phase === 'clean' && prep.cleaned.size === 0) {
+            REQUIRED_ELECTRODES.forEach(zoneType => {
+                prep.cleaned.add(zoneType);
+                updateZoneVisual(zoneType, 'cleaned');
+            });
+            updatePrepDot('clean', 1);
+            advancePrepPhase('abrade');
+            return;
+        }
+
+        if (phase === 'abrade' && prep.cleaned.size === REQUIRED_ELECTRODES.length && prep.abraded.size === 0) {
+            REQUIRED_ELECTRODES.forEach(zoneType => {
+                prep.abraded.add(zoneType);
+                updateZoneVisual(zoneType, 'abraded');
+            });
+            updatePrepDot('abrade', 1);
+            showImpedance('final');
+            advancePrepPhase('gel');
+            return;
+        }
+
+        if (phase === 'gel' && prep.abraded.size === REQUIRED_ELECTRODES.length && prep.gelled.size === 0) {
+            REQUIRED_ELECTRODES.forEach(zoneType => {
+                prep.gelled.add(zoneType);
+                updateZoneVisual(zoneType, 'gelled');
+            });
+            updatePrepDot('gel', 1);
+            advancePrepPhase('place');
         }
     }
 
     function updateZoneVisual(zoneType, className) {
-        const zoneIndex = { ra: 1, la: 2, rl: 3 };
-        const zones = { ra: 'prep-zone-1', la: 'prep-zone-2', rl: 'prep-zone-3' };
+        const zones = {
+            ra: 'prep-zone-ra', la: 'prep-zone-la', rl: 'prep-zone-rl', ll: 'prep-zone-ll',
+            v1: 'prep-zone-v1', v2: 'prep-zone-v2', v3: 'prep-zone-v3', v4: 'prep-zone-v4', v5: 'prep-zone-v5', v6: 'prep-zone-v6'
+        };
         const el = document.getElementById(zones[zoneType]);
+        if (!el) {
+            console.error('Zone element not found:', zones[zoneType]);
+            return;
+        }
         el.classList.remove('cleaned', 'abraded', 'gelled', 'electrode-placed');
         el.classList.add(className);
         
         // Trigger micro-animations
-        const idx = zoneIndex[zoneType];
         if (className === 'cleaned') {
-            triggerCleanAnimation(idx);
+            triggerCleanAnimation(zoneType);
         } else if (className === 'abraded') {
-            triggerAbradeAnimation(idx);
+            triggerAbradeAnimation(zoneType);
         } else if (className === 'gelled') {
-            triggerGelAnimation(idx);
+            triggerGelAnimation(zoneType);
         }
     }
 
@@ -909,12 +914,16 @@
     }
 
     function advancePrepPhase(newPhase) {
+        console.log('>>> Advancing to phase:', newPhase);
         state.prepState.currentPhase = newPhase;
 
         // Update collapsible step cards
         document.querySelectorAll('.collapsible-step').forEach(s => {
             s.classList.remove('active');
-            if (s.dataset.step === newPhase) s.classList.add('active');
+            if (s.dataset.step === newPhase) {
+                s.classList.add('active');
+                console.log('Activated collapsible step:', newPhase);
+            }
         });
         
         // Also update old tool-step classes if they exist
@@ -928,7 +937,10 @@
         const idx = phases.indexOf(newPhase);
         for (let i = 0; i < idx; i++) {
             const stepEl = document.getElementById(`prep-step-${i + 1}`);
-            if (stepEl) stepEl.classList.add('completed');
+            if (stepEl) {
+                stepEl.classList.add('completed');
+                console.log('Marked completed: prep-step-' + (i + 1));
+            }
         }
         
         // Update horizontal progress bar
@@ -936,67 +948,280 @@
 
         // If place phase, setup electrode dragging
         if (newPhase === 'place') {
-            setupElectrodePlacement();
+            console.log('Setting up electrode placement handlers...');
+            setTimeout(() => {
+                setupElectrodePlacement();
+                console.log('Electrode placement handlers initialized');
+            }, 100);
         }
     }
 
     function setupElectrodePlacement() {
-        document.querySelectorAll('.electrode-target').forEach(t => t.classList.remove('hidden'));
+        const zones = document.querySelectorAll('.prep-zone');
+        const trayElectrodes = document.querySelectorAll('.electrode-pick');
+        const phase = state.prepState.currentPhase;
 
-        const electrodes = document.querySelectorAll('.electrode-pick');
-        const armContainer = document.getElementById('arm-container');
+        if (phase !== 'place') return;
 
-        electrodes.forEach(el => {
-            el.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('electrode-type', el.dataset.type);
+        initValidationPanel();
+        console.log('Setting up electrode placement (tap electrode to auto-attach) for 10 electrodes');
+
+        function setSelectedElectrode(type) {
+            state.prepState.selectedElectrode = type;
+            trayElectrodes.forEach(el => {
+                if (el.dataset.type === type) el.classList.add('selected');
+                else el.classList.remove('selected');
             });
-        });
 
-        // Override the drop handler for electrodes
-        armContainer.addEventListener('drop', function electrodeDropHandler(e) {
-            const type = e.dataTransfer.getData('electrode-type');
-            if (!type) return;
-
-            e.preventDefault();
-
-            const svg = document.getElementById('arm-svg');
-            const rect = svg.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / rect.width * 500;
-            const y = (e.clientY - rect.top) / rect.height * 600;
-
-            const targets = {
-                ra: { cx: 250, cy: 200 },
-                la: { cx: 250, cy: 300 },
-                rl: { cx: 250, cy: 450 }
-            };
-
-            const target = targets[type];
-            const dist = Math.sqrt(Math.pow(x - target.cx, 2) + Math.pow(y - target.cy, 2));
-
-            if (dist < 60) {
-                state.prepState.placed.add(type);
-                updateZoneVisual(type, 'electrode-placed');
-                document.getElementById(`drag-e-${type}`).classList.add('placed');
-                const dot = document.getElementById(`place-dot-${type}`);
-                if (dot) dot.classList.add('done');
-                
-                // Trigger electrode placement animation with cable
-                triggerElectrodePlacement(type);
-                
-                // Update site dots in header
-                const siteDots = document.querySelectorAll(`#prep-step-4 .site-dots .dot`);
-                siteDots.forEach((d, i) => {
-                    const types = ['ra', 'la', 'rl'];
-                    if (state.prepState.placed.has(types[i])) d.classList.add('done');
-                });
-
-                if (state.prepState.placed.size >= 3) {
-                    document.getElementById('prep-next-btn').classList.remove('hidden');
-                    document.getElementById('prep-step-4').classList.add('completed');
-                    showImpedance('final');
-                }
+            const messageEl = document.getElementById('summary-message');
+            if (messageEl) {
+                messageEl.innerHTML = `<p>${type.toUpperCase()} selected. Tap again to attach automatically to ${type.toUpperCase()} zone.</p>`;
             }
+        }
+
+        function clearSelectedElectrode() {
+            state.prepState.selectedElectrode = null;
+            trayElectrodes.forEach(el => el.classList.remove('selected'));
+        }
+
+        function attemptPlace(electrodeType, zoneType, zoneElement) {
+            if (!electrodeType || !zoneType) return;
+
+            if (electrodeType !== zoneType) {
+                if (zoneElement) {
+                    zoneElement.classList.add('wrong-target');
+                    setTimeout(() => zoneElement.classList.remove('wrong-target'), 700);
+                }
+                showPlacementHint(electrodeType, zoneType);
+                validateElectrodePlacement(electrodeType, false);
+                return;
+            }
+
+            if (state.prepState.placed.has(zoneType)) {
+                clearSelectedElectrode();
+                return;
+            }
+
+            state.prepState.placed.add(zoneType);
+            updateZoneVisual(zoneType, 'electrode-placed');
+            validateElectrodePlacement(zoneType, true);
+            drawElectrodeThread(zoneType);
+
+            const pick = document.querySelector(`.electrode-pick[data-type="${zoneType}"]`);
+            if (pick) {
+                pick.classList.add('placed');
+                pick.classList.remove('selected');
+            }
+
+            const dot = document.getElementById(`place-dot-${zoneType}`);
+            if (dot) dot.classList.add('done');
+
+            triggerElectrodePlacement(zoneType);
+            clearSelectedElectrode();
+
+            if (state.prepState.placed.size >= REQUIRED_ELECTRODES.length) {
+                showValidationPanel();
+                const nextBtn = document.getElementById('prep-next-btn');
+                if (nextBtn) nextBtn.classList.remove('hidden');
+                const prepStep4 = document.getElementById('prep-step-4');
+                if (prepStep4) prepStep4.classList.add('completed');
+                showImpedance('final');
+            }
+        }
+
+        trayElectrodes.forEach(electrode => {
+            electrode.setAttribute('draggable', 'false');
+            electrode.ondragstart = (ev) => {
+                if (electrode.classList.contains('placed')) {
+                    ev.preventDefault();
+                    return;
+                }
+                ev.dataTransfer.effectAllowed = 'move';
+                ev.dataTransfer.setData('electrode-type', electrode.dataset.type);
+                ev.dataTransfer.setData('text/plain', electrode.dataset.type);
+                electrode.classList.add('dragging');
+                setSelectedElectrode(electrode.dataset.type);
+            };
+            electrode.ondragend = () => electrode.classList.remove('dragging');
+            electrode.onpointerdown = (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                if (electrode.classList.contains('placed')) return;
+                const electrodeType = electrode.dataset.type;
+                setSelectedElectrode(electrodeType);
+                const zoneEl = document.getElementById(`prep-zone-${electrodeType}`);
+                attemptPlace(electrodeType, electrodeType, zoneEl);
+            };
+            electrode.onclick = (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                if (electrode.classList.contains('placed')) return;
+                const electrodeType = electrode.dataset.type;
+                if (!state.prepState.placed.has(electrodeType)) {
+                    setSelectedElectrode(electrodeType);
+                    const zoneEl = document.getElementById(`prep-zone-${electrodeType}`);
+                    attemptPlace(electrodeType, electrodeType, zoneEl);
+                }
+            };
         });
+
+        zones.forEach(zone => {
+            zone.ondragover = (ev) => {
+                ev.preventDefault();
+                if (state.prepState.currentPhase !== 'place') return;
+                zone.classList.add('drag-hover');
+            };
+            zone.ondragleave = () => {
+                zone.classList.remove('drag-hover');
+            };
+            zone.ondrop = (ev) => {
+                ev.preventDefault();
+                zone.classList.remove('drag-hover');
+                if (state.prepState.currentPhase !== 'place') return;
+
+                const electrodeType = ev.dataTransfer.getData('electrode-type') || ev.dataTransfer.getData('text/plain');
+                const zoneType = zone.dataset.zone;
+                attemptPlace(electrodeType, zoneType, zone);
+            };
+            zone.onclick = (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                if (state.prepState.currentPhase !== 'place') return;
+                const zoneType = zone.dataset.zone;
+                const selectedElectrodeType = state.prepState.selectedElectrode;
+                if (!selectedElectrodeType) {
+                    const messageEl = document.getElementById('summary-message');
+                    if (messageEl) {
+                        messageEl.innerHTML = '<p>Tap any electrode in the tray. It will auto-attach to the matching body zone.</p>';
+                    }
+                    return;
+                }
+                attemptPlace(selectedElectrodeType, zoneType, zone);
+            };
+        });
+    }
+
+    function drawElectrodeThread(zoneType) {
+        const threadLayer = document.getElementById('electrode-thread-layer');
+        if (!threadLayer) return;
+
+        const zonePositions = {
+            ra: { x: 500, y: 200 }, la: { x: 100, y: 200 }, rl: { x: 350, y: 600 }, ll: { x: 250, y: 600 },
+            v1: { x: 270, y: 175 }, v2: { x: 330, y: 175 }, v3: { x: 345, y: 205 }, v4: { x: 360, y: 230 }, v5: { x: 390, y: 230 }, v6: { x: 420, y: 230 }
+        };
+
+        const idx = REQUIRED_ELECTRODES.indexOf(zoneType);
+        const startX = 560;
+        const startY = 100 + (idx * 18);
+        const target = zonePositions[zoneType];
+        if (!target) return;
+
+        const existing = threadLayer.querySelector(`line[data-zone="${zoneType}"]`);
+        if (existing) existing.remove();
+
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('class', 'electrode-thread');
+        line.setAttribute('data-zone', zoneType);
+        line.setAttribute('x1', startX);
+        line.setAttribute('y1', startY);
+        line.setAttribute('x2', target.x);
+        line.setAttribute('y2', target.y);
+        threadLayer.appendChild(line);
+    }
+
+    function showPlacementHint(electrodeType, zoneType) {
+        const target = electrodeType.toUpperCase();
+        const droppedOn = zoneType.toUpperCase();
+        const messageEl = document.getElementById('summary-message');
+        if (messageEl) {
+            messageEl.innerHTML = `<p>Incorrect drop: ${target} cannot be placed on ${droppedOn}. Place ${target} on the ${target} zone.</p>`;
+        }
+    }
+
+    function initValidationPanel() {
+        const validationChecks = document.getElementById('validation-checks');
+        if (!validationChecks) return;
+
+        validationChecks.innerHTML = REQUIRED_ELECTRODES.map(type => {
+            const label = type.toUpperCase();
+            return `<div class="validation-item" id="validate-${type}">
+                <div class="validate-icon"><i class="fas fa-circle"></i></div>
+                <div class="validate-label">
+                    <strong>${label}</strong>
+                    <span class="validate-details">Awaiting placement</span>
+                </div>
+                <div class="validate-status">
+                    <span class="status-correct"><i class="fas fa-check"></i> Correct</span>
+                    <span class="status-incorrect"><i class="fas fa-times"></i> Incorrect</span>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function validateElectrodePlacement(type, isCorrect) {
+        if (!state.prepState.validationScores) {
+            state.prepState.validationScores = {};
+        }
+        state.prepState.validationScores[type] = isCorrect ? 100 : 0;
+        updateValidationUI(type, isCorrect);
+    }
+
+    function updateValidationUI(type, isCorrect) {
+        const validationItem = document.getElementById(`validate-${type}`);
+        if (!validationItem) return;
+
+        validationItem.classList.remove('correct', 'incorrect');
+        validationItem.classList.add(isCorrect ? 'correct' : 'incorrect');
+
+        const statusDiv = validationItem.querySelector('.validate-status');
+        if (statusDiv) {
+            statusDiv.classList.add('visible');
+            const ok = statusDiv.querySelector('.status-correct');
+            const bad = statusDiv.querySelector('.status-incorrect');
+            if (ok) ok.style.display = isCorrect ? 'inline-flex' : 'none';
+            if (bad) bad.style.display = isCorrect ? 'none' : 'inline-flex';
+        }
+
+        const icon = validationItem.querySelector('.validate-icon i');
+        if (icon) {
+            icon.className = isCorrect ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+        }
+
+        updatePlacementQualityScore();
+    }
+
+    function showValidationPanel() {
+        const panel = document.getElementById('validation-panel');
+        if (panel) {
+            panel.classList.remove('hidden');
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    function updatePlacementQualityScore() {
+        if (!state.prepState.validationScores) return;
+
+        const scores = REQUIRED_ELECTRODES.map(type => state.prepState.validationScores[type] || 0);
+        const avg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+
+        const scoreEl = document.getElementById('placement-quality');
+        if (scoreEl) scoreEl.textContent = avg + '%';
+
+        const messageEl = document.getElementById('summary-message');
+        if (messageEl) {
+            let message = '';
+            if (avg === 100) {
+                message = '✓ Perfect placement. All 10 electrodes are correctly positioned.';
+            } else if (avg >= 80) {
+                message = '⚠ Almost there. Review highlighted incorrect electrodes for correction.';
+            } else {
+                message = '⚠ Multiple electrodes are incorrect. Signal quality will be poor until corrected.';
+            }
+            messageEl.innerHTML = `<p>${message}</p>`;
+        }
+
+        state.prepState.placementQuality = avg;
+        console.log('Placement Quality Score:', avg + '%');
     }
 
     function showImpedance(zone) {
@@ -1163,7 +1388,54 @@
         state.signalBuffer = [];
         state.signalOffset = 0;
         updateConditionInfo();
-        drawEmgBaseline();
+        displaySignalQualityFromPlacement();
+        drawECGBaseline();
+    }
+
+    function displaySignalQualityFromPlacement() {
+        const placementQuality = state.prepState.placementQuality || 100;
+        const qualityEl = document.getElementById('quality-value');
+        const qualityFill = document.getElementById('quality-fill');
+        const qualityMsg = document.getElementById('quality-message');
+        const qualityIcon = document.querySelector('.quality-label i');
+        
+        if (!qualityEl) return;
+        
+        let quality = 'Good';
+        let color = '#10b981'; // success
+        let message = 'Electrode placement is optimal. Signal quality is excellent.';
+        
+        if (placementQuality >= 90) {
+            quality = 'Excellent';
+            color = '#10b981';
+            message = '✓ Electrode placement is optimal. Signal quality is excellent.';
+        } else if (placementQuality >= 75) {
+            quality = 'Good';
+            color = '#f59e0b';
+            message = '⚠ Electrode placement is acceptable. Some noise may be present.';
+            if (qualityIcon) qualityIcon.style.background = 'var(--warning-light)';
+            if (qualityIcon) qualityIcon.style.color = 'var(--warning)';
+        } else {
+            quality = 'Poor';
+            color = '#ef4444';
+            message = '⚠ Electrode placement needs improvement. Expect significant noise in the signal.';
+            if (qualityIcon) qualityIcon.style.background = 'var(--danger-light)';
+            if (qualityIcon) qualityIcon.style.color = 'var(--danger)';
+        }
+        
+        qualityEl.textContent = quality;
+        qualityEl.className = 'quality-value ' + quality.toLowerCase();
+        
+        if (qualityFill) {
+            qualityFill.style.width = placementQuality + '%';
+            qualityFill.style.backgroundColor = color;
+        }
+        
+        if (qualityMsg) {
+            qualityMsg.textContent = message;
+        }
+        
+        console.log('Signal Quality (from placement):', quality, '(' + placementQuality + '%)');
     }
 
     function updateConditionInfo() {
@@ -1179,7 +1451,7 @@
         document.getElementById('force-value').textContent = state.forceLevel + '%';
     }
 
-    function drawEmgBaseline() {
+    function drawECGBaseline() {
         if (!ecgCtx) return;
         const canvas = ecgCtx.canvas;
         ecgCtx.fillStyle = '#000';
@@ -1238,6 +1510,15 @@
         const signal = engine.generateSignal(condition, force, chunkSize, state.signalOffset);
         state.signalOffset += chunkSize;
 
+        // Add noise based on electrode placement quality
+        const placementQuality = state.prepState.placementQuality || 100;
+        const noiseAmount = (100 - placementQuality) * 0.5; // More noise if placement is poor
+        
+        for (let i = 0; i < signal.length; i++) {
+            // Add proportional noise
+            signal[i] += (Math.random() - 0.5) * noiseAmount / 50;
+        }
+
         // Add to buffer
         for (let i = 0; i < signal.length; i++) {
             state.signalBuffer.push(signal[i]);
@@ -1255,12 +1536,21 @@
         drawGrid(ecgCtx, canvas.width, canvas.height);
 
         // Determine scale based on condition
-        const scales = { normal: 80, myopathy: 150, neuropathy: 40, als: 30 };
+        const scales = { normal: 80, tachycardia: 85, bradycardia: 78, irregular: 82 };
         const scale = scales[condition] || 80;
 
-        ecgCtx.strokeStyle = '#22d3ee';
+        // Color waveform based on placement quality
+        let waveformColor = '#22d3ee'; // Default cyan (good)
+        if (placementQuality < 85) {
+            waveformColor = '#f59e0b'; // Orange (warning)
+        }
+        if (placementQuality < 70) {
+            waveformColor = '#ef4444'; // Red (poor)
+        }
+
+        ecgCtx.strokeStyle = waveformColor;
         ecgCtx.lineWidth = 1.2;
-        ecgCtx.shadowColor = '#22d3ee';
+        ecgCtx.shadowColor = waveformColor;
         ecgCtx.shadowBlur = 2;
         ecgCtx.beginPath();
 
@@ -1283,12 +1573,13 @@
         const peak = engine.getPeakAmplitude(new Float32Array(recentSignal));
         const spectrum = engine.generateSpectrum(condition, force);
         const meanFreq = engine.calculateMeanFreq(spectrum.freqs, spectrum.powers);
-        const activeMUs = Math.round(20 * engine.conditions[condition].recruitmentGain * Math.pow(force / 100, 0.7));
+        const bpmRange = engine.conditions[condition].bpm;
+        const estimatedBPM = Math.round((bpmRange.min + bpmRange.max) / 2 + (force - 50) * 0.06);
 
         document.getElementById('rms-value').textContent = rms.toFixed(3) + ' mV';
         document.getElementById('peak-value').textContent = peak.toFixed(3) + ' mV';
         document.getElementById('freq-value').textContent = Math.round(meanFreq) + ' Hz';
-        document.getElementById('mu-value').textContent = Math.max(0, activeMUs);
+        document.getElementById('mu-value').textContent = Math.max(30, estimatedBPM);
 
         // Update scale info
         const scaleInfo = document.getElementById('scale-info');
@@ -1314,34 +1605,34 @@
         // Add condition-specific annotations
         const annotations = [];
 
-        if (condition === 'als' && force < 10) {
+        if (condition === 'irregular') {
             annotations.push({
-                text: 'Fasciculation',
-                description: 'Spontaneous motor unit firing',
+                text: 'Variable RR Intervals',
+                description: 'Beat-to-beat timing changes',
                 color: '#a78bfa'
             });
         }
 
-        if (condition === 'myopathy') {
+        if (condition === 'tachycardia') {
             annotations.push({
-                text: 'Small polyphasic MUAPs',
-                description: 'Characteristic of muscle disease',
+                text: 'Fast Rhythm',
+                description: 'Shortened RR intervals',
                 color: '#fbbf24'
             });
         }
 
-        if (condition === 'neuropathy') {
+        if (condition === 'bradycardia') {
             annotations.push({
-                text: 'Large amplitude MUAPs',
-                description: 'Due to reinnervation',
+                text: 'Slow Rhythm',
+                description: 'Prolonged RR intervals',
                 color: '#f87171'
             });
         }
 
         if (force > 80 && condition === 'normal') {
             annotations.push({
-                text: 'Full interference pattern',
-                description: 'Normal at maximum voluntary contraction',
+                text: 'Stable Sinus Morphology',
+                description: 'Consistent P-QRS-T sequence',
                 color: '#34d399'
             });
         }
@@ -1553,13 +1844,9 @@
         drawGrid(ctx, canvas.width, canvas.height);
 
         // Generate a ramp signal (rest to MVC)
+        // Generate a continuous normal rhythm segment for envelope stability analysis.
         const totalMs = 4000;
-        const signal = [];
-        for (let t = 0; t < totalMs; t += 50) {
-            const force = (t / totalMs) * 100;
-            const chunk = engine.generateSignal('normal', force, 50);
-            for (let i = 0; i < chunk.length; i++) signal.push(chunk[i]);
-        }
+        const signal = engine.generateSignal('normal', 50, totalMs);
 
         const envelope = engine.calculateRMSEnvelope(new Float32Array(signal), windowSize);
         const maxEnv = Math.max(...envelope);
@@ -1596,12 +1883,12 @@
         document.getElementById('rms-stats').innerHTML = `
             <div class="stat-item"><span class="stat-label">Window Size:</span><span class="stat-value">${windowSize} ms</span></div>
             <div class="stat-item"><span class="stat-label">Peak RMS:</span><span class="stat-value">${Math.max(...envelope).toFixed(3)} mV</span></div>
-            <div class="stat-item"><span class="stat-label">Signal shows:</span><span class="stat-value">Rest → MVC ramp (Normal)</span></div>
+            <div class="stat-item"><span class="stat-label">Signal shows:</span><span class="stat-value">Normal rhythm amplitude envelope</span></div>
         `;
     }
 
     function renderComparisonView() {
-        const conditions = ['normal', 'myopathy', 'neuropathy', 'als'];
+        const conditions = ['normal', 'tachycardia', 'bradycardia', 'irregular'];
         conditions.forEach(cond => {
             const canvas = document.getElementById(`comp-${cond}`);
             if (!canvas) return;
@@ -1618,7 +1905,7 @@
             const scale = peak > 0 ? (canvas.height * 0.35) / peak : 80;
             const centerY = canvas.height / 2;
 
-            const colors = { normal: '#34d399', myopathy: '#fbbf24', neuropathy: '#f87171', als: '#a78bfa' };
+            const colors = { normal: '#34d399', tachycardia: '#fbbf24', bradycardia: '#f87171', irregular: '#a78bfa' };
             ctx.strokeStyle = colors[cond];
             ctx.lineWidth = 1.2;
             ctx.beginPath();
@@ -1645,7 +1932,7 @@
 
     // ======== DOWNLOAD FUNCTIONS ========
     function downloadResultsReport() {
-        const conditions = ['normal', 'myopathy', 'neuropathy', 'als'];
+        const conditions = ['normal', 'tachycardia', 'bradycardia', 'irregular'];
         const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
         
         let reportHTML = `
@@ -1663,9 +1950,9 @@
         th { background: #1e3a5f; color: white; }
         tr:nth-child(even) { background: #f8fafc; }
         .condition-normal { color: #10b981; font-weight: bold; }
-        .condition-myopathy { color: #f59e0b; font-weight: bold; }
-        .condition-neuropathy { color: #ef4444; font-weight: bold; }
-        .condition-als { color: #8b5cf6; font-weight: bold; }
+        .condition-tachycardia { color: #f59e0b; font-weight: bold; }
+        .condition-bradycardia { color: #ef4444; font-weight: bold; }
+        .condition-irregular { color: #8b5cf6; font-weight: bold; }
         .summary-box { background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; }
         .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px; }
     </style>
@@ -1710,14 +1997,14 @@
         reportHTML += `
     </table>
 
-    <h2>MUAP Characteristics</h2>
+    <h2>Rhythm Characteristics</h2>
     <table>
         <tr>
             <th>Condition</th>
-            <th>MUAP Duration (ms)</th>
-            <th>MUAP Amplitude (mV)</th>
-            <th>Phases</th>
-            <th>Firing Rate (Hz)</th>
+            <th>Estimated QRS Width (ms)</th>
+            <th>Estimated QRS Amplitude (mV)</th>
+            <th>RR Variability</th>
+            <th>Heart Rate (bpm)</th>
         </tr>`;
 
         conditions.forEach(cond => {
@@ -1726,9 +2013,9 @@
             reportHTML += `
         <tr>
             <td class="${condClass}">${params.name}</td>
-            <td>${params.muapDuration}</td>
-            <td>${params.muapAmplitude}</td>
-            <td>${params.muapPhases}</td>
+            <td>${params.qrsDurationMs}</td>
+            <td>${params.qrsAmplitude}</td>
+            <td>${Math.round((params.rrVariability || 0) * 100)}%</td>
             <td>${params.firingRate.min} - ${params.firingRate.max}</td>
         </tr>`;
         });
@@ -1738,10 +2025,10 @@
 
     <h2>Clinical Interpretation</h2>
     <div class="summary-box">
-        <strong>Normal:</strong> Triphasic MUAPs with amplitude 50 µV - 3 mV, duration 5-15 ms. Linear recruitment with force.<br><br>
-        <strong>Myopathy:</strong> Small, short, polyphasic MUAPs. Early recruitment due to muscle fiber loss.<br><br>
-        <strong>Neuropathy:</strong> Large, long, polyphasic MUAPs due to collateral reinnervation. Reduced recruitment.<br><br>
-        <strong>ALS:</strong> Giant MUAPs with fasciculations and fibrillations. Unstable firing patterns.
+        <strong>Normal:</strong> Regular sinus rhythm with consistent RR intervals and P-QRS-T sequence.<br><br>
+        <strong>Tachycardia:</strong> Faster sinus rhythm with shortened RR intervals and higher heart rate.<br><br>
+        <strong>Bradycardia:</strong> Slower rhythm with prolonged RR intervals and lower heart rate.<br><br>
+        <strong>Irregular:</strong> Variable RR intervals and rhythm instability with nonuniform beat timing.
     </div>
 
     <h2>System Configuration</h2>
@@ -1773,11 +2060,11 @@
     }
 
     function downloadRawDataCSV() {
-        const conditions = ['normal', 'myopathy', 'neuropathy', 'als'];
+        const conditions = ['normal', 'tachycardia', 'bradycardia', 'irregular'];
         const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
         const sampleDuration = 500; // ms
         
-        let csvContent = 'Sample,Time(ms),Normal(mV),Myopathy(mV),Neuropathy(mV),ALS(mV)\n';
+        let csvContent = 'Sample,Time(ms),Normal(mV),Tachycardia(mV),Bradycardia(mV),Irregular(mV)\n';
         
         // Generate signals for all conditions
         const signals = {};
@@ -1790,7 +2077,7 @@
         
         for (let i = 0; i < numSamples; i++) {
             const time = (i * timeStep).toFixed(3);
-            csvContent += `${i},${time},${signals.normal[i].toFixed(6)},${signals.myopathy[i].toFixed(6)},${signals.neuropathy[i].toFixed(6)},${signals.als[i].toFixed(6)}\n`;
+            csvContent += `${i},${time},${signals.normal[i].toFixed(6)},${signals.tachycardia[i].toFixed(6)},${signals.bradycardia[i].toFixed(6)},${signals.irregular[i].toFixed(6)}\n`;
         }
         
         // Add summary statistics at the end
@@ -1848,32 +2135,27 @@
     // ======== GLOSSARY ========
     function setupGlossary() {
         const terms = [
-            { term: 'ECG (Electrocardiography)', def: 'A technique for evaluating and recording electrical activity produced by skeletal muscles.' },
-            { term: 'MUAP (Motor Unit Action Potential)', def: 'The electrical signal produced by a single motor unit — one motor neuron and all the muscle fibers it innervates.' },
-            { term: 'Motor Unit', def: 'A motor neuron and all the muscle fibers it controls. The smallest functional unit of muscle contraction.' },
-            { term: 'Recruitment', def: 'The progressive activation of additional motor units as muscle force increases. Follows the size principle (small units first).' },
-            { term: 'Interference Pattern', def: 'The complex ECG signal at maximum contraction when many motor units fire simultaneously, making individual MUAPs indistinguishable.' },
-            { term: 'Fibrillation Potential', def: 'Spontaneous electrical activity from a single denervated muscle fiber. Indicates nerve damage. Amplitude: 20-200 µV, Frequency: 1-30 Hz.' },
-            { term: 'Fasciculation', def: 'Spontaneous firing of an entire motor unit, visible as a muscle twitch. Variable amplitude (0.5-3 mV), irregular intervals. Can be benign or pathological (ALS).' },
-            { term: 'Myopathy', def: 'Disease of the muscle tissue itself. Causes small (50-500 µV), short (3-8 ms), polyphasic MUAPs with steep early recruitment.' },
-            { term: 'Neuropathy', def: 'Disease of peripheral nerves. Causes large (1-6 mV), long (10-25 ms) MUAPs (from reinnervation) with flattened recruitment curve.' },
-            { term: 'ALS (Amyotrophic Lateral Sclerosis)', def: 'Progressive neurodegenerative disease affecting both upper and lower motor neurons. ECG shows fasciculations, fibrillations, and giant MUAPs (3-8 mV surface, 10-15 mV needle).' },
+            { term: 'ECG (Electrocardiography)', def: 'A noninvasive recording of cardiac electrical activity from surface electrodes.' },
+            { term: 'P Wave', def: 'Represents atrial depolarization and normally precedes each QRS in sinus rhythm.' },
+            { term: 'QRS Complex', def: 'Represents ventricular depolarization; usually the highest-amplitude part of the ECG.' },
+            { term: 'T Wave', def: 'Represents ventricular repolarization following the QRS complex.' },
+            { term: 'RR Interval', def: 'Time between consecutive R peaks. Used to determine rhythm regularity and heart rate.' },
+            { term: 'Heart Rate (bpm)', def: 'Estimated from RR interval using HR = 60000 / RR(ms).' },
+            { term: 'Tachycardia', def: 'Heart rate above 100 bpm, commonly with shortened RR intervals.' },
+            { term: 'Bradycardia', def: 'Heart rate below 60 bpm, commonly with prolonged RR intervals.' },
+            { term: 'Irregular Rhythm', def: 'Rhythm with variable RR intervals and inconsistent beat timing.' },
             { term: 'Impedance', def: 'Resistance to electrical current flow at the electrode-skin interface. Must be < 5 kΩ for clean recordings. >10 kΩ causes increased noise and phase distortion.' },
             { term: 'CMRR (Common Mode Rejection Ratio)', def: 'Ability of the differential amplifier to reject signals common to both inputs (noise) while amplifying the difference (ECG).' },
             { term: 'Notch Filter', def: 'A filter that removes a specific frequency (50 or 60 Hz) to eliminate power line interference.' },
             { term: 'RMS (Root Mean Square)', def: 'A measure of signal amplitude calculated as the square root of the mean of squared values. Represents signal "power".' },
             { term: 'FFT (Fast Fourier Transform)', def: 'Algorithm that converts a time-domain signal into its frequency components, revealing the power spectrum.' },
             { term: 'Differential Amplifier', def: 'An amplifier that amplifies the difference between two inputs, rejecting common noise (essential for ECG).' },
-            { term: 'Sampling Rate', def: 'Number of samples taken per second (Hz). Surface ECG: 1000 Hz min, 2000 Hz preferred. Needle ECG: 10 kHz.' },
-            { term: 'Polyphasic', def: 'MUAPs with more than 4 phases (crossings of baseline). Often indicates myopathy or reinnervation.' },
-            { term: 'Neuromuscular Junction', def: 'The synapse between a motor neuron and muscle fiber where acetylcholine is released to trigger muscle contraction.' },
-            { term: 'Size Principle', def: 'Motor units are recruited in order of increasing size — small, fatigue-resistant units first, larger units as force demand increases.' },
-            { term: 'Resting Membrane Potential', def: 'The electrical potential difference across the muscle cell membrane at rest. Skeletal muscle: -70 to -90 mV.' },
-            { term: 'Action Potential', def: 'The rapid depolarization and repolarization of a muscle fiber. Peak overshoot: +20 to +40 mV. Duration: 2-5 ms for muscle fibers.' },
-            { term: 'Conduction Velocity', def: 'Speed at which the action potential travels along muscle fibers. Normal: 3-6 m/s. Reduced in neuropathy and myopathy.' },
-            { term: 'ISI Variability', def: 'Inter-spike interval variability. Coefficient of variation (CV) typically 10-30% in normal motor units. Increased in ALS.' },
-            { term: 'Crosstalk', def: 'ECG signal pickup from adjacent muscles. Typically 5-15% of neighboring muscle signal in surface ECG.' },
-            { term: 'Baseline Drift', def: 'Low frequency (<10 Hz) changes in the ECG baseline, typically due to electrode movement or skin-electrode interface changes.' }
+            { term: 'Sampling Rate', def: 'Number of samples taken per second (Hz). Typical diagnostic ECG uses 500-1000 Hz.' },
+            { term: 'Baseline Drift', def: 'Low-frequency movement of the ECG baseline due to respiration, motion, or electrode effects.' },
+            { term: 'ST Segment', def: 'Segment between QRS end and T-wave start; important for ischemia interpretation.' },
+            { term: 'PR Interval', def: 'Interval from P-wave onset to QRS onset; reflects AV conduction timing.' },
+            { term: 'QT Interval', def: 'Interval from QRS onset to T-wave end; reflects ventricular depolarization and repolarization duration.' },
+            { term: 'Lead II', def: 'A common rhythm-monitoring lead derived from RA to LL electrode vector.' }
         ];
 
         // Render glossary terms into the modal
@@ -1905,8 +2187,6 @@
             });
         }
     }
-
-})();
 
 // Global function for toggling prep step cards
 function togglePrepStep(stepNum) {
@@ -1997,30 +2277,26 @@ function updateFloatingImpedance(value, status) {
 }
 
 // Global function for micro-animations
-function triggerCleanAnimation(zoneIndex) {
-    const armSvg = document.getElementById('arm-svg');
-    armSvg.classList.add('cleaned');
+function triggerCleanAnimation(zoneType) {
+    // zoneType can be string (ra/la/rl/ll) or number (1/2/3) - handle both for compatibility
+    const zoneId = typeof zoneType === 'number' ? `prep-zone-${zoneType}` : `prep-zone-${zoneType}`;
     
-    const zone = document.getElementById(`prep-zone-${zoneIndex}`);
-    zone.classList.add('cleaned');
+    const zone = document.getElementById(zoneId);
+    if (zone) zone.classList.add('cleaned');
 }
 
-function triggerAbradeAnimation(zoneIndex) {
-    const armSvg = document.getElementById('arm-svg');
-    armSvg.classList.add('abraded');
+function triggerAbradeAnimation(zoneType) {
+    const zoneId = typeof zoneType === 'number' ? `prep-zone-${zoneType}` : `prep-zone-${zoneType}`;
     
-    const zone = document.getElementById(`prep-zone-${zoneIndex}`);
-    zone.classList.add('abraded');
+    const zone = document.getElementById(zoneId);
+    if (zone) zone.classList.add('abraded');
 }
 
-function triggerGelAnimation(zoneIndex) {
-    const gelShine = document.getElementById(`gel-shine-${zoneIndex}`);
-    if (gelShine) {
-        gelShine.classList.add('visible');
-    }
+function triggerGelAnimation(zoneType) {
+    const zoneId = typeof zoneType === 'number' ? `prep-zone-${zoneType}` : `prep-zone-${zoneType}`;
     
-    const zone = document.getElementById(`prep-zone-${zoneIndex}`);
-    zone.classList.add('gelled');
+    const zone = document.getElementById(zoneId);
+    if (zone) zone.classList.add('gelled');
 }
 
 function triggerElectrodePlacement(electrodeType) {
