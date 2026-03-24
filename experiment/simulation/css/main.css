@@ -789,7 +789,7 @@ canvas {
 }
 
 /* ECG Complex Visualization */
-.muap-visualization {
+.ecg-preview-visualization {
     background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-primary) 100%);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -801,7 +801,7 @@ canvas {
     overflow: hidden;
 }
 
-.muap-visualization::before {
+.ecg-preview-visualization::before {
     content: '';
     position: absolute;
     top: -50%;
@@ -813,7 +813,7 @@ canvas {
     pointer-events: none;
 }
 
-.muap-visualization canvas {
+.ecg-preview-visualization canvas {
     max-width: 100%;
     height: auto;
     border-radius: var(--radius-lg);
@@ -1227,7 +1227,7 @@ canvas {
 
 .arm-svg {
     width: 100%;
-    max-width: 400px;
+    max-width: 560px;
     height: auto;
     min-height: 350px;
     display: block;
@@ -1246,6 +1246,7 @@ canvas {
     stroke-width: 2;
     stroke-dasharray: 5 5;
     cursor: pointer;
+    pointer-events: all;
     transition: var(--transition);
 }
 
@@ -1267,6 +1268,18 @@ canvas {
     opacity: 0.3;
 }
 
+.prep-zone.wrong-target {
+    stroke: var(--danger);
+    fill: rgba(239, 68, 68, 0.2);
+    animation: wrongDropPulse 0.35s ease-in-out 2;
+}
+
+@keyframes wrongDropPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
 .electrode-target {
     fill: #bfdbfe;
     stroke: #3b82f6;
@@ -1281,6 +1294,12 @@ canvas {
 .zone-label-name {
     font-weight: 600;
     fill: var(--text-primary);
+}
+
+.zone-label-bold,
+.arm-svg text {
+    pointer-events: none;
+    user-select: none;
 }
 
 /* Prep Tools */
@@ -1674,6 +1693,8 @@ canvas {
 
 .guide-dot.e1 { background: #4a90a4; }
 .guide-dot.e2 { background: #10b981; }
+.guide-dot.e3 { background: #ff9800; }
+.guide-dot.e4 { background: #e11d48; }
 .guide-dot.gnd { background: #64748b; }
 
 .substep-progress {
@@ -1860,6 +1881,8 @@ canvas {
     padding: 6px;
     background: var(--bg-primary);
     border-radius: var(--radius);
+    flex-wrap: wrap;
+    max-width: 280px;
 }
 
 .electrode-tray .electrode-pick {
@@ -1877,16 +1900,215 @@ canvas {
     transition: var(--transition);
 }
 
+.electrode-tray .electrode-pick.selected {
+    background: var(--accent-dark);
+    box-shadow: 0 0 0 3px var(--accent-light);
+    transform: scale(1.08);
+}
+
 .electrode-tray .electrode-pick.placed {
     background: var(--success);
     opacity: 0.5;
     cursor: default;
 }
 
+#electrode-thread-layer .electrode-thread {
+    stroke: #334155;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 4 3;
+    opacity: 0.85;
+}
+
 .electrode-guide {
     display: flex;
     gap: 16px;
     flex-wrap: wrap;
+}
+
+/* ===== VALIDATION PANEL ===== */
+.validation-panel {
+    background: var(--bg-card);
+    border: 2px solid var(--accent-border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin: 24px 0;
+    transition: var(--transition);
+}
+
+.validation-panel.hidden {
+    display: none;
+}
+
+.validation-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.validation-header i {
+    width: 40px;
+    height: 40px;
+    background: var(--success-light);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--success);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.validation-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.validation-header p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 4px 0 0 0;
+}
+
+.validation-checks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.validation-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: var(--transition);
+}
+
+.validation-item.correct {
+    background: var(--success-light);
+    border-color: var(--success);
+}
+
+.validation-item.incorrect {
+    background: var(--danger-light);
+    border-color: var(--danger);
+}
+
+.validate-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.validation-item.correct .validate-icon {
+    color: var(--success);
+}
+
+.validation-item.incorrect .validate-icon {
+    color: var(--danger);
+}
+
+.validate-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.validate-label strong {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.validate-details {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.validate-status {
+    display: none;
+}
+
+.validate-status.visible {
+    display: flex;
+    align-items: center;
+}
+
+.status-correct,
+.status-incorrect {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-correct {
+    color: var(--success);
+}
+
+.status-incorrect {
+    color: var(--danger);
+    display: none;
+}
+
+.status-incorrect.visible {
+    display: flex;
+}
+
+.validation-summary {
+    background: var(--accent-light);
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.summary-score {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.score-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.score-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.summary-message {
+    text-align: right;
+    flex: 1;
+}
+
+.summary-message p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
 }
 
 /* ===== MICRO-ANIMATIONS ===== */
@@ -2448,9 +2670,9 @@ canvas {
 }
 
 .condition-indicator.healthy { background: var(--success); }
-.condition-indicator.myopathy { background: var(--warning); }
-.condition-indicator.neuropathy { background: var(--danger); }
-.condition-indicator.als { background: #8b5cf6; }
+.condition-indicator.tachycardia { background: var(--warning); }
+.condition-indicator.bradycardia { background: var(--danger); }
+.condition-indicator.irregular { background: #8b5cf6; }
 
 /* Contraction Controls */
 .contraction-controls {
@@ -2525,6 +2747,88 @@ canvas {
     font-size: 0.75rem;
     color: var(--text-muted);
     padding: 8px 0;
+    margin-bottom: 12px;
+}
+
+/* Signal Quality Indicator */
+.signal-quality-indicator {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.quality-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.quality-label i {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--success-light);
+    color: var(--success);
+    font-size: 0.6rem;
+    animation: pulse-indicator 2s ease-in-out infinite;
+}
+
+.quality-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.quality-value {
+    font-weight: 600;
+    font-size: 0.9rem;
+    min-width: 60px;
+}
+
+.quality-value.good {
+    color: var(--success);
+}
+
+.quality-value.warning {
+    color: var(--warning);
+}
+
+.quality-value.poor {
+    color: var(--danger);
+}
+
+.quality-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.quality-fill {
+    height: 100%;
+    background: var(--success);
+    transition: all 0.3s ease;
+}
+
+.quality-message {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+@keyframes pulse-indicator {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
 }
 
 /* Signal Speed Control */
@@ -2883,9 +3187,9 @@ canvas {
 }
 
 .condition-dot.healthy { background: var(--success); }
-.condition-dot.myopathy { background: var(--warning); }
-.condition-dot.neuropathy { background: var(--danger); }
-.condition-dot.als { background: #8b5cf6; }
+.condition-dot.tachycardia { background: var(--warning); }
+.condition-dot.bradycardia { background: var(--danger); }
+.condition-dot.irregular { background: #8b5cf6; }
 
 .comparison-cell canvas {
     width: 100%;
@@ -3524,11 +3828,11 @@ canvas {
     }
     
     /* ECG Complex canvas */
-    .muap-visualization {
+    .ecg-preview-visualization {
         padding: 16px;
     }
     
-    .muap-visualization canvas {
+    .ecg-preview-visualization canvas {
         height: 150px !important;
     }
     

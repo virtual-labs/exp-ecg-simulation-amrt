@@ -1,516 +1,255 @@
 /* =========================================
-   ECG Signal Engine — Realistic Signal Generation
-   Research-Grade Physiological ECG Simulation
+   ECG Signal Engine — Cardiac Rhythm Simulation
    ========================================= */
 
 class ECGSignalEngine {
     constructor() {
-        // ========== PHYSIOLOGICAL CONSTANTS ==========
-        // Resting membrane potential range for skeletal muscle: -70 to -90 mV
-        this.restingPotential = { min: -90, max: -70 }; // mV (skeletal muscle range)
-        
-        // Action potential characteristics
-        this.actionPotential = {
-            peakOvershoot: { min: 20, max: 40 },  // mV (+20 to +40 mV)
-            duration: { min: 2, max: 5 }          // ms (muscle fiber AP duration)
-        };
-        
-        // Muscle fiber conduction velocity
-        this.conductionVelocity = {
-            normal: { min: 3, max: 6 },           // m/s (normal muscle)
-            neuropathy: { min: 2, max: 4 },       // m/s (reduced in neuropathy)
-            myopathy: { min: 2.5, max: 5 }        // m/s (slightly reduced)
-        };
-        
-        // ========== SAMPLING PARAMETERS ==========
-        // Surface ECG: 1000 Hz minimum, 2000 Hz preferred
-        // Needle ECG: 10 kHz recommended
-        this.sampleRate = 2000;         // Hz - preferred for surface ECG
-        this.sampleRateMinimum = 1000;  // Hz - minimum standard
-        this.sampleRateNeedle = 10000;  // Hz - for needle ECG
-        this.ecgType = 'surface';       // 'surface' or 'needle'
-        this.time = 0;
-        
-        // ========== BANDWIDTH SETTINGS ==========
+        this.sampleRate = 1000;
+        this.sampleRateMinimum = 500;
+        this.sampleRateNeedle = 2000;
+        this.ecgType = 'surface';
+
         this.bandwidth = {
-            surface: { low: 20, high: 450 },     // Hz (surface ECG)
-            needle: { low: 10, high: 5000 }      // Hz (needle ECG)
+            surface: { low: 0.05, high: 150 },
+            needle: { low: 0.05, high: 250 }
         };
-        
-        // ========== NOISE PARAMETERS ==========
-        // Noise RMS: 5-20 µV realistic for surface ECG
-        this.noiseRMS = { min: 5, max: 20 };     // µV
-        this.motionArtifactFreq = 20;             // Hz (< 20 Hz motion artifact)
-        
-        // ========== ADVANCED MODELING PARAMETERS ==========
-        // Interspike interval variability (ISI)
-        this.isiVariability = { min: 0.10, max: 0.30 }; // CV 10-30%
-        
-        // Fatigue modeling
-        this.fatigueEnabled = true;
-        this.fatigueRate = 0.02;        // Frequency shift rate per second
-        
-        // Crosstalk simulation (adjacent muscle interference)
-        this.crosstalkEnabled = true;
-        this.crosstalkLevel = { min: 0.05, max: 0.15 }; // 5-15%
-        
-        // Subcutaneous fat attenuation
+
+        this.noiseRMS = { min: 5, max: 20 }; // uV
+        this.baselineDriftEnabled = true;
+        this.baselineDriftFreq = 0.33;
+        this.baselineDriftAmp = 0.03; // mV
+
+        this.electrodeImpedance = 5; // kOhm
+        this.subjectType = 'normal';
         this.fatAttenuation = {
             thin: 1.0,
-            normal: 0.85,
-            high: 0.6
+            normal: 0.9,
+            high: 0.75
         };
-        this.subjectType = 'normal';    // 'thin', 'normal', or 'high'
-        
-        // Baseline drift (< 10 Hz low frequency drift)
-        this.baselineDriftEnabled = true;
-        this.baselineDriftFreq = 0.5;   // Hz
-        this.baselineDriftAmp = 0.02;   // mV
-        
-        // Impedance effects
-        this.electrodeImpedance = 5;    // kΩ (target < 10 kΩ)
-        
-        // ========== CONDITION PARAMETERS ==========
-        // Signal parameters per condition - based on clinical ECG characteristics
-        // Note: Amplitudes are for SURFACE ECG unless otherwise noted
+
         this.conditions = {
             normal: {
-                name: 'Healthy',
-                muapDuration: 10,      // ms (typical 5-15ms)
-                muapAmplitude: 0.5,    // mV base - surface ECG (50 µV - 3 mV typical)
-                muapPhases: 3,         // triphasic
-                firingRate: { min: 6, max: 25 },  // Hz - realistic firing rates
-                recruitmentGain: 1.0,
-                recruitmentCurve: 'linear',       // Normal: linear recruitment vs force
-                jitter: 0.03,          // ms - slight timing variability
-                noiseLevel: 0.010,     // baseline noise (~10 µV RMS)
-                conductionVelocity: 4.5, // m/s
-                asymmetry: 0.1,        // MUAP shape asymmetry factor
-                description: 'Normal motor unit recruitment. Amplitude increases with force. Clean interference pattern at MVC.',
+                name: 'Normal Sinus Rhythm',
+                description: 'Regular rhythm with normal RR intervals and stable P-QRS-T morphology.',
                 characteristics: [
-                    'MUAP Duration: 5-15 ms',
-                    'Amplitude: 50 µV - 3 mV (surface ECG)',
-                    'Phases: 2-4 (mostly triphasic)',
-                    'Firing Rate: 6-25 Hz',
-                    'Full interference pattern at MVC',
-                    'Conduction Velocity: 3-6 m/s'
-                ]
+                    'Heart rate: 60-100 bpm',
+                    'Regular RR interval',
+                    'Visible P wave before each QRS',
+                    'Narrow QRS and smooth T wave'
+                ],
+                bpm: { min: 65, max: 85 },
+                rrVariability: 0.03,
+                qrsAmplitude: 1.0,
+                pAmplitude: 0.12,
+                tAmplitude: 0.35,
+                stShift: 0,
+                qrsDurationMs: 90,
+                firingRate: { min: 65, max: 85 },
+                recruitmentGain: 1.0
             },
-            myopathy: {
-                name: 'Myopathy',
-                muapDuration: 5,       // ms (3-8 ms typical - refined)
-                muapAmplitude: 0.15,   // mV - smaller due to fiber loss (surface ECG)
-                muapPhases: 5,         // polyphasic
-                firingRate: { min: 10, max: 35 },  // early recruitment
-                recruitmentGain: 2.5,  // more units recruited early
-                recruitmentCurve: 'steep',         // Myopathy: steeper early recruitment
-                jitter: 0.05,
-                noiseLevel: 0.015,     // ~15 µV RMS
-                conductionVelocity: 3.5, // m/s (slightly reduced)
-                asymmetry: 0.2,        // More asymmetric MUAPs
-                description: 'Myopathic pattern: Small, short, polyphasic MUAPs. Early recruitment — many motor units fire even at low force levels.',
+            tachycardia: {
+                name: 'Sinus Tachycardia',
+                description: 'Fast rhythm with shortened RR intervals and preserved waveform sequence.',
                 characteristics: [
-                    'MUAP Duration: 3-8 ms (SHORT)',
-                    'Amplitude: 50-500 µV (LOW, surface ECG)',
-                    'Phases: 4-6+ (polyphasic)',
-                    'Early recruitment pattern',
-                    'Full interference at LOW force',
-                    'Steeper recruitment curve'
-                ]
+                    'Heart rate: > 100 bpm',
+                    'Short RR interval',
+                    'P wave may merge into preceding T wave at high rate',
+                    'QRS generally narrow'
+                ],
+                bpm: { min: 105, max: 145 },
+                rrVariability: 0.05,
+                qrsAmplitude: 0.95,
+                pAmplitude: 0.10,
+                tAmplitude: 0.30,
+                stShift: 0,
+                qrsDurationMs: 80,
+                firingRate: { min: 105, max: 145 },
+                recruitmentGain: 1.1
             },
-            neuropathy: {
-                name: 'Neuropathy',
-                muapDuration: 17,      // ms (10-25 ms depending on reinnervation stage)
-                muapAmplitude: 2.0,    // mV - larger due to reinnervation (1-6 mV surface typical)
-                muapPhases: 5,         // polyphasic
-                firingRate: { min: 4, max: 18 },  // slower firing
-                recruitmentGain: 0.35, // reduced recruitment
-                recruitmentCurve: 'flat',          // Neuropathy: flattened recruitment curve
-                jitter: 0.1,           // increased jitter
-                noiseLevel: 0.015,     // ~15 µV RMS
-                conductionVelocity: 3.0, // m/s (reduced)
-                conductionBlock: false, // Partial motor unit dropout
-                asymmetry: 0.25,       // Variable rise/fall time
-                fasciculations: false,
-                description: 'Neuropathic pattern: Large, long, polyphasic MUAPs due to reinnervation. Reduced recruitment — fewer motor units available.',
+            bradycardia: {
+                name: 'Sinus Bradycardia',
+                description: 'Slow rhythm with prolonged RR intervals and clear waveform separation.',
                 characteristics: [
-                    'MUAP Duration: 10-25 ms (LONG)',
-                    'Amplitude: 1-6 mV (HIGH, surface ECG)',
-                    'Phases: 4-6+ (polyphasic)',
-                    'Reduced recruitment',
-                    'Discrete pattern even at moderate force',
-                    'Reduced conduction velocity: 2-4 m/s'
-                ]
+                    'Heart rate: < 60 bpm',
+                    'Long RR interval',
+                    'Clear separation between T and next P wave',
+                    'Narrow QRS in sinus bradycardia'
+                ],
+                bpm: { min: 40, max: 58 },
+                rrVariability: 0.04,
+                qrsAmplitude: 1.05,
+                pAmplitude: 0.12,
+                tAmplitude: 0.36,
+                stShift: 0,
+                qrsDurationMs: 95,
+                firingRate: { min: 40, max: 58 },
+                recruitmentGain: 0.9
             },
-            als: {
-                name: 'ALS (Amyotrophic Lateral Sclerosis)',
-                muapDuration: 22,      // very long
-                muapAmplitude: 3.5,    // mV - very large (3-8 mV surface, 10-15 mV needle)
-                muapPhases: 7,         // complex
-                firingRate: { min: 5, max: 15 },  // Variable and unstable (5-15 Hz)
-                recruitmentGain: 0.15, // severely reduced
-                recruitmentCurve: 'severely_reduced', // ALS: severely reduced maximum
-                jitter: 0.20,          // Increased jitter, unstable
-                isiVariability: 0.35,  // Variable interspike interval
-                noiseLevel: 0.020,     // ~20 µV RMS
-                conductionVelocity: 2.5, // m/s (reduced)
-                asymmetry: 0.35,       // Complex, non-symmetric MUAPs
-                fasciculations: true,
-                fasciculationAmplitude: { min: 0.5, max: 3.0 }, // Variable amplitude
-                fasciculationInterval: { min: 0.3, max: 3.0 },  // Irregular intervals (seconds)
-                fibrillations: true,
-                fibrillationAmplitude: { min: 0.020, max: 0.200 }, // 20-200 µV
-                fibrillationRate: { min: 1, max: 30 },  // 1-30 Hz
-                description: 'ALS pattern: Very large, long, unstable MUAPs. Fasciculations and fibrillations present at rest. Severely reduced recruitment.',
+            irregular: {
+                name: 'Irregular Rhythm',
+                description: 'Variable RR intervals with occasional premature beats and rhythm instability.',
                 characteristics: [
-                    'MUAP Duration: 15-25+ ms (VERY LONG)',
-                    'Amplitude: 3-8 mV surface, 10-15 mV needle',
-                    'Unstable, complex MUAPs',
-                    'Fasciculations: variable amplitude, irregular',
-                    'Fibrillations: 20-200 µV, 1-30 Hz',
-                    'Severely reduced recruitment',
-                    'Increased jitter and ISI variability'
-                ]
+                    'Variable RR interval',
+                    'Occasional premature beats',
+                    'Beat-to-beat amplitude variability',
+                    'Rhythm not strictly periodic'
+                ],
+                bpm: { min: 55, max: 120 },
+                rrVariability: 0.22,
+                qrsAmplitude: 1.1,
+                pAmplitude: 0.08,
+                tAmplitude: 0.30,
+                stShift: -0.03,
+                qrsDurationMs: 110,
+                firingRate: { min: 55, max: 120 },
+                recruitmentGain: 1.0
             }
         };
     }
 
-    // Generate a single MUAP waveform - realistic asymmetric shape
-    generateMUAP(condition, variationSeed = 0) {
-        const params = this.conditions[condition];
-        const duration = params.muapDuration * (1 + (Math.random() - 0.5) * 0.25);
-        
-        // Apply subcutaneous fat attenuation
-        const fatFactor = this.fatAttenuation[this.subjectType] || 1.0;
-        const amplitude = params.muapAmplitude * fatFactor * (1 + (Math.random() - 0.5) * 0.35);
-        
-        const phases = params.muapPhases + Math.floor(Math.random() * 2);
-        const numSamples = Math.round(duration * this.sampleRate / 1000);
-        const waveform = new Float32Array(numSamples);
-        
-        // Asymmetry factor - real MUAPs are not perfectly symmetric
-        const asymmetry = params.asymmetry || 0.1;
-        const riseTimeFactor = 1 - asymmetry * (0.5 + Math.random() * 0.5);
-        const fallTimeFactor = 1 + asymmetry * (0.5 + Math.random() * 0.5);
-
-        for (let i = 0; i < numSamples; i++) {
-            const t = i / numSamples;
-            let value = 0;
-
-            // Generate multi-phase waveform with realistic asymmetric shape
-            for (let p = 0; p < phases; p++) {
-                // Slightly offset phase centers for asymmetry
-                const phaseOffset = (p % 2 === 0) ? -0.02 * asymmetry : 0.02 * asymmetry;
-                const phaseCenter = (p + 0.5) / phases + phaseOffset;
-                
-                // Variable width for rise/fall asymmetry
-                const isRising = t < phaseCenter;
-                const phaseWidth = (1 / (phases * 2.2)) * (isRising ? riseTimeFactor : fallTimeFactor);
-                
-                const phaseSign = (p % 2 === 0) ? 1 : -1;
-                const phaseAmp = amplitude * (1 - Math.abs(p - phases / 2) / phases * 0.4);
-                
-                // Add slight random variation to each phase
-                const phaseVariation = 1 + (Math.random() - 0.5) * 0.15;
-
-                value += phaseSign * phaseAmp * phaseVariation *
-                    Math.exp(-Math.pow((t - phaseCenter) / phaseWidth, 2) / 2);
-            }
-
-            // Enhanced envelope for realistic onset/offset (asymmetric)
-            const onsetSharpness = 0.6 + asymmetry * 0.3;
-            const offsetSharpness = 0.8 - asymmetry * 0.2;
-            const envelope = Math.pow(Math.sin(Math.PI * t), t < 0.5 ? onsetSharpness : offsetSharpness);
-            value *= envelope;
-
-            // Add realistic jitter with proper units
-            value += (Math.random() - 0.5) * params.jitter * amplitude * 0.5;
-
-            waveform[i] = value;
-        }
-
-        return { waveform, duration, amplitude };
+    gaussianRandom() {
+        let u = 0;
+        let v = 0;
+        while (u === 0) u = Math.random();
+        while (v === 0) v = Math.random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
     }
 
-    // Generate continuous ECG signal - research-grade modeling
+    getConditionBPM(condition, forceLevel) {
+        const params = this.conditions[condition] || this.conditions.normal;
+        const base = params.bpm.min + Math.random() * (params.bpm.max - params.bpm.min);
+        const normalized = Math.max(0, Math.min(1, forceLevel / 100));
+
+        if (condition === 'tachycardia') return base + normalized * 10;
+        if (condition === 'bradycardia') return Math.max(35, base - normalized * 5);
+        if (condition === 'irregular') return base + (normalized - 0.5) * 8;
+        return base + (normalized - 0.5) * 6;
+    }
+
+    beatValue(t, params, amplitudeScale) {
+        const p = params.pAmplitude * Math.exp(-Math.pow((t + 0.2) / 0.03, 2));
+        const q = -0.15 * Math.exp(-Math.pow((t + 0.04) / 0.012, 2));
+        const r = 1.0 * Math.exp(-Math.pow(t / 0.01, 2));
+        const s = -0.25 * Math.exp(-Math.pow((t - 0.04) / 0.014, 2));
+        const tw = params.tAmplitude * Math.exp(-Math.pow((t - 0.28) / 0.06, 2));
+        const st = params.stShift || 0;
+        return amplitudeScale * params.qrsAmplitude * (p + q + r + s + tw + st);
+    }
+
+    addBeat(signal, beatCenter, params, rrSec, amplitudeScale) {
+        const pre = Math.round(0.32 * this.sampleRate);
+        const post = Math.round(Math.max(0.45, rrSec * 0.7) * this.sampleRate);
+
+        for (let i = -pre; i <= post; i++) {
+            const idx = beatCenter + i;
+            if (idx < 0 || idx >= signal.length) continue;
+            const t = i / this.sampleRate;
+            signal[idx] += this.beatValue(t, params, amplitudeScale);
+        }
+    }
+
     generateSignal(condition, forceLevel, durationMs, startTime = 0, elapsedTime = 0) {
-        const params = this.conditions[condition];
+        const params = this.conditions[condition] || this.conditions.normal;
         const numSamples = Math.round(durationMs * this.sampleRate / 1000);
         const signal = new Float32Array(numSamples);
 
-        // ========== RECRUITMENT CURVE MODEL (Item 13) ==========
-        const maxMUs = Math.round(15 * params.recruitmentGain);
-        let activeMUs;
-        
-        switch (params.recruitmentCurve) {
-            case 'steep':
-                // Myopathy: steeper early recruitment
-                activeMUs = Math.max(0, Math.round(maxMUs * Math.pow(forceLevel / 100, 0.4)));
-                break;
-            case 'flat':
-                // Neuropathy: flattened recruitment curve
-                activeMUs = Math.max(0, Math.round(maxMUs * Math.pow(forceLevel / 100, 0.9)));
-                break;
-            case 'severely_reduced':
-                // ALS: severely reduced maximum recruitment
-                activeMUs = Math.max(0, Math.round(maxMUs * 0.3 * Math.pow(forceLevel / 100, 0.7)));
-                break;
-            default:
-                // Normal: linear recruitment vs force
-                activeMUs = Math.max(0, Math.round(maxMUs * Math.pow(forceLevel / 100, 0.6)));
-        }
+        const fatFactor = this.fatAttenuation[this.subjectType] || 1.0;
+        const bpm = this.getConditionBPM(condition, forceLevel);
+        const rrMean = 60 / Math.max(30, bpm);
+        const amplitudeScale = (0.75 + (forceLevel / 100) * 0.5) * fatFactor;
 
-        // ========== CONDUCTION BLOCK (Item 20) ==========
-        // For neuropathy: partial motor unit dropout
-        if (params.conductionBlock && Math.random() < 0.3) {
-            activeMUs = Math.floor(activeMUs * (0.5 + Math.random() * 0.3));
-        }
+        let nextBeatSec = Math.random() * rrMean * 0.6;
+        while (nextBeatSec < durationMs / 1000 + rrMean) {
+            let rr = rrMean * (1 + this.gaussianRandom() * params.rrVariability);
+            rr = Math.max(0.35, Math.min(1.8, rr));
 
-        // ========== ISI VARIABILITY (Item 14) ==========
-        // Real motor units have CV (coefficient of variation) of 10-30%
-        const isiCV = params.isiVariability || (this.isiVariability.min + Math.random() * (this.isiVariability.max - this.isiVariability.min));
-
-        // Generate MUAPs for each active motor unit
-        for (let mu = 0; mu < activeMUs; mu++) {
-            const muap = this.generateMUAP(condition, mu);
-            const firingRateRange = params.firingRate.max - params.firingRate.min;
-            let baseFiringRate = params.firingRate.min +
-                (firingRateRange * Math.min(1, (forceLevel / 100) * (mu + 1) / activeMUs));
-
-            // ========== FATIGUE MODELING (Item 15) ==========
-            // During sustained contraction: firing rate slightly decreases
-            if (this.fatigueEnabled && elapsedTime > 0) {
-                const fatigueFactor = Math.max(0.7, 1 - this.fatigueRate * elapsedTime);
-                baseFiringRate *= fatigueFactor;
+            if (condition === 'irregular' && Math.random() < 0.12) {
+                rr *= 0.6;
             }
 
-            // Size principle: later recruited units are larger
-            const sizeFactor = 1 + mu * 0.12;
+            const beatCenter = Math.round(nextBeatSec * this.sampleRate);
+            const beatAmp = amplitudeScale * (0.9 + Math.random() * 0.2);
+            this.addBeat(signal, beatCenter, params, rr, beatAmp);
 
-            // Calculate base interval with ISI variability
-            const baseInterval = Math.round(this.sampleRate / baseFiringRate);
-            let pos = Math.round(Math.random() * baseInterval);
-
-            while (pos < numSamples) {
-                for (let j = 0; j < muap.waveform.length && (pos + j) < numSamples; j++) {
-                    signal[pos + j] += muap.waveform[j] * sizeFactor;
-                }
-                
-                // Apply ISI variability using gaussian-like distribution
-                const isiVariation = this.gaussianRandom() * isiCV * baseInterval;
-                const nextInterval = Math.max(
-                    Math.round(baseInterval * 0.5), // Minimum interval
-                    Math.round(baseInterval + isiVariation)
-                );
-                pos += nextInterval;
-            }
+            nextBeatSec += rr;
         }
 
-        // ========== FASCICULATIONS (Item 21) - Enhanced variability ==========
-        // Random burst events with variable amplitude and irregular intervals
-        if (params.fasciculations && forceLevel < 15) {
-            const fascAmpRange = params.fasciculationAmplitude || { min: 0.5, max: 2.5 };
-            const fascIntervalRange = params.fasciculationInterval || { min: 0.5, max: 2.5 };
-            
-            let pos = Math.round(Math.random() * this.sampleRate * fascIntervalRange.max);
-            
-            while (pos < numSamples) {
-                // Variable amplitude for each fasciculation
-                const fascMuap = this.generateMUAP(condition);
-                const fascAmp = fascAmpRange.min + Math.random() * (fascAmpRange.max - fascAmpRange.min);
-                
-                for (let j = 0; j < fascMuap.waveform.length && (pos + j) < numSamples; j++) {
-                    signal[pos + j] += fascMuap.waveform[j] * fascAmp;
-                }
-                
-                // Irregular intervals between fasciculations
-                const nextInterval = (fascIntervalRange.min + Math.random() * (fascIntervalRange.max - fascIntervalRange.min)) * this.sampleRate;
-                pos += Math.round(nextInterval);
-            }
-        }
-
-        // ========== FIBRILLATIONS (Item 22) - Proper amplitude range ==========
-        // 20-200 µV, frequency 1-30 Hz
-        if (params.fibrillations && forceLevel < 15) {
-            const fibAmpRange = params.fibrillationAmplitude || { min: 0.020, max: 0.200 }; // mV
-            const fibRateRange = params.fibrillationRate || { min: 1, max: 30 }; // Hz
-            const fibRate = fibRateRange.min + Math.random() * (fibRateRange.max - fibRateRange.min);
-            const fibInterval = Math.round(this.sampleRate / fibRate);
-            
-            for (let pos = Math.round(Math.random() * fibInterval); pos < numSamples; pos += fibInterval + Math.round(Math.random() * fibInterval * 0.5)) {
-                // Variable amplitude within physiological range
-                const fibAmp = fibAmpRange.min + Math.random() * (fibAmpRange.max - fibAmpRange.min);
-                const fibDur = Math.round((1.5 + Math.random()) * this.sampleRate / 1000);
-                const polarity = Math.random() > 0.5 ? 1 : -1;
-                
-                for (let j = 0; j < fibDur && (pos + j) < numSamples; j++) {
-                    const t = j / fibDur;
-                    signal[pos + j] += fibAmp * Math.sin(Math.PI * t) * polarity;
-                }
-            }
-        }
-
-        // ========== CROSSTALK SIMULATION (Item 16) ==========
-        // 5-15% neighboring muscle interference
-        if (this.crosstalkEnabled) {
-            const crosstalkLevel = this.crosstalkLevel.min + Math.random() * (this.crosstalkLevel.max - this.crosstalkLevel.min);
-            const crosstalkSignal = new Float32Array(numSamples);
-            
-            // Generate "adjacent muscle" signal at different frequency
-            for (let i = 0; i < numSamples; i++) {
-                const t = i / this.sampleRate;
-                // Lower amplitude, slightly different frequency characteristics
-                crosstalkSignal[i] = (Math.random() - 0.5) * params.muapAmplitude * 0.3 * 
-                    (1 + 0.5 * Math.sin(2 * Math.PI * 15 * t)); // ~15 Hz modulation
-            }
-            
-            for (let i = 0; i < numSamples; i++) {
-                signal[i] += crosstalkSignal[i] * crosstalkLevel;
-            }
-        }
-
-        // ========== BASELINE DRIFT (Item 18) ==========
-        // Low frequency (<10 Hz) drift due to movement
         if (this.baselineDriftEnabled) {
             for (let i = 0; i < numSamples; i++) {
                 const t = (startTime + i) / this.sampleRate;
-                const drift = this.baselineDriftAmp * Math.sin(2 * Math.PI * this.baselineDriftFreq * t);
-                // Add very low frequency component
-                const drift2 = this.baselineDriftAmp * 0.5 * Math.sin(2 * Math.PI * 0.1 * t);
-                signal[i] += drift + drift2;
+                signal[i] += this.baselineDriftAmp * Math.sin(2 * Math.PI * this.baselineDriftFreq * t);
+                signal[i] += this.baselineDriftAmp * 0.4 * Math.sin(2 * Math.PI * 0.08 * t + elapsedTime * 0.2);
             }
         }
 
-        // ========== NOISE MODEL (Item 9) ==========
-        // Realistic baseline noise with proper units (5-20 µV RMS)
-        const noiseRMS = (this.noiseRMS.min + Math.random() * (this.noiseRMS.max - this.noiseRMS.min)) / 1000; // Convert µV to mV
-        
-        // Add motion artifact component (<20 Hz)
+        const noiseRMSmV = (this.noiseRMS.min + Math.random() * (this.noiseRMS.max - this.noiseRMS.min)) / 1000;
         for (let i = 0; i < numSamples; i++) {
-            // Gaussian white noise
-            const noise = this.gaussianRandom() * noiseRMS * 2;
-            signal[i] += noise;
-            
-            // Motion artifact (low frequency)
-            const t = i / this.sampleRate;
-            const motionArtifact = noiseRMS * 0.5 * Math.sin(2 * Math.PI * (5 + Math.random() * 10) * t);
-            signal[i] += motionArtifact * 0.3; // 30% of noise level
+            signal[i] += this.gaussianRandom() * noiseRMSmV * 1.8;
         }
-        
-        // ========== IMPEDANCE EFFECTS (Item 25) ==========
-        // Increase noise if impedance > 10 kΩ
+
         if (this.electrodeImpedance > 10) {
-            const impedanceFactor = Math.sqrt(this.electrodeImpedance / 5);
+            const factor = Math.sqrt(this.electrodeImpedance / 5);
             for (let i = 0; i < numSamples; i++) {
-                signal[i] += this.gaussianRandom() * noiseRMS * impedanceFactor;
-                // Add phase distortion at high impedance
+                signal[i] += this.gaussianRandom() * noiseRMSmV * factor;
                 if (i > 0) {
-                    signal[i] = signal[i] * 0.95 + signal[i-1] * 0.05 * (this.electrodeImpedance / 10);
+                    signal[i] = signal[i] * 0.96 + signal[i - 1] * 0.04;
                 }
             }
         }
 
         return signal;
     }
-    
-    // Gaussian random number generator (Box-Muller transform)
-    gaussianRandom() {
-        let u = 0, v = 0;
-        while (u === 0) u = Math.random();
-        while (v === 0) v = Math.random();
-        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-    }
 
-    // Generate frequency spectrum (simulated FFT) - Item 24: Realistic power spectrum shape
-    // Uses band-limited Gaussian distribution with peak around 80-120 Hz, skewed spectrum
     generateSpectrum(condition, forceLevel, elapsedTime = 0) {
-        const params = this.conditions[condition];
+        const params = this.conditions[condition] || this.conditions.normal;
         const freqs = [];
         const powers = [];
         const numBins = 256;
         const maxFreq = this.sampleRate / 2;
-
-        // Bandwidth based on ECG type
         const bandwidth = this.ecgType === 'needle' ? this.bandwidth.needle : this.bandwidth.surface;
+
+        let center = 18;
+        let spread = 12;
+        let scale = 1;
+
+        if (condition === 'tachycardia') {
+            center = 24;
+            spread = 14;
+            scale = 0.9;
+        } else if (condition === 'bradycardia') {
+            center = 12;
+            spread = 10;
+            scale = 1.05;
+        } else if (condition === 'irregular') {
+            center = 20;
+            spread = 20;
+            scale = 1.1;
+        }
+
+        center += (forceLevel / 100) * 4;
 
         for (let i = 0; i < numBins; i++) {
             const freq = (i / numBins) * maxFreq;
             freqs.push(freq);
 
-            let power = 0;
+            let power = Math.exp(-Math.pow((freq - center) / spread, 2)) * scale;
+            power += 0.35 * Math.exp(-Math.pow((freq - 2 * center) / (spread * 1.3), 2));
 
-            // ECG power spectrum shape - band-limited Gaussian with skew
-            // Peak typically around 80-120 Hz for surface ECG
-            if (condition === 'normal') {
-                // Normal: peak around 80-100 Hz
-                const centerFreq = 90 + forceLevel * 0.3;
-                const bandwidthLeft = 45;   // Narrower on left (skewed)
-                const bandwidthRight = 70;  // Wider on right
-                const skewedWidth = freq < centerFreq ? bandwidthLeft : bandwidthRight;
-                power = Math.exp(-Math.pow((freq - centerFreq) / skewedWidth, 2)) * forceLevel / 100;
-                
-                // Add secondary peak around 150 Hz (harmonics)
-                const secondaryPeak = Math.exp(-Math.pow((freq - 150) / 50, 2)) * 0.3 * forceLevel / 100;
-                power += secondaryPeak;
-                
-            } else if (condition === 'myopathy') {
-                // Myopathy: shifted to higher frequencies (shorter MUAPs)
-                // Peak around 120-140 Hz
-                const centerFreq = 130 + forceLevel * 0.2;
-                const bandwidthLeft = 50;
-                const bandwidthRight = 80;
-                const skewedWidth = freq < centerFreq ? bandwidthLeft : bandwidthRight;
-                power = Math.exp(-Math.pow((freq - centerFreq) / skewedWidth, 2)) * forceLevel / 100 * 0.5;
-                
-            } else if (condition === 'neuropathy') {
-                // Neuropathy: shifted to lower frequencies (longer MUAPs)
-                // Peak around 50-70 Hz
-                const centerFreq = 60 + forceLevel * 0.2;
-                const bandwidthLeft = 30;
-                const bandwidthRight = 50;
-                const skewedWidth = freq < centerFreq ? bandwidthLeft : bandwidthRight;
-                power = Math.exp(-Math.pow((freq - centerFreq) / skewedWidth, 2)) * forceLevel / 100 * 1.5;
-                
-            } else if (condition === 'als') {
-                // ALS: very low frequency, high power peaks
-                // Peak around 40-50 Hz with complex shape
-                const centerFreq = 45 + forceLevel * 0.15;
-                const bandwidthLeft = 25;
-                const bandwidthRight = 40;
-                const skewedWidth = freq < centerFreq ? bandwidthLeft : bandwidthRight;
-                power = Math.exp(-Math.pow((freq - centerFreq) / skewedWidth, 2)) * forceLevel / 100 * 2;
-                
-                // Add fibrillation component (higher frequency)
-                if (forceLevel < 10 && freq > 80 && freq < 200) {
-                    power += 0.08 * Math.exp(-Math.pow((freq - 140) / 40, 2)) * Math.random();
-                }
+            if (condition === 'irregular') {
+                power += 0.15 * Math.exp(-Math.pow((freq - 35) / 18, 2)) * Math.random();
             }
 
-            // ========== FATIGUE MODELING (Item 15) - Frequency shift ==========
-            // Median frequency shifts downward during sustained contraction
-            if (this.fatigueEnabled && elapsedTime > 0) {
-                const freqShift = Math.min(0.3, elapsedTime * this.fatigueRate);
-                // Compress spectrum towards lower frequencies
-                const shiftedPower = power * (1 - freqShift * freq / maxFreq);
-                power = shiftedPower;
-            }
-
-            // Apply bandwidth filtering
             if (freq < bandwidth.low || freq > bandwidth.high) {
-                power *= 0.1; // Attenuate out-of-band
+                power *= 0.1;
             }
 
-            // Add realistic noise floor with slight variation
             power += 0.002 * (1 + Math.random() * 0.5);
-            
-            // Ensure non-negative
             powers.push(Math.max(0, power));
         }
 
         return { freqs, powers };
     }
 
-    // Calculate RMS of signal
     calculateRMS(signal) {
         let sumSquares = 0;
         for (let i = 0; i < signal.length; i++) {
@@ -519,9 +258,9 @@ class ECGSignalEngine {
         return Math.sqrt(sumSquares / signal.length);
     }
 
-    // Calculate mean frequency from spectrum
     calculateMeanFreq(freqs, powers) {
-        let sumFP = 0, sumP = 0;
+        let sumFP = 0;
+        let sumP = 0;
         for (let i = 0; i < freqs.length; i++) {
             sumFP += freqs[i] * powers[i];
             sumP += powers[i];
@@ -529,7 +268,6 @@ class ECGSignalEngine {
         return sumP > 0 ? sumFP / sumP : 0;
     }
 
-    // Calculate median frequency
     calculateMedianFreq(freqs, powers) {
         let totalPower = 0;
         for (let i = 0; i < powers.length; i++) totalPower += powers[i];
@@ -541,7 +279,6 @@ class ECGSignalEngine {
         return 0;
     }
 
-    // Get peak amplitude
     getPeakAmplitude(signal) {
         let peak = 0;
         for (let i = 0; i < signal.length; i++) {
@@ -550,11 +287,10 @@ class ECGSignalEngine {
         return peak;
     }
 
-    // RMS envelope
     calculateRMSEnvelope(signal, windowSize) {
-        const windowSamples = Math.round(windowSize * this.sampleRate / 1000);
+        const windowSamples = Math.max(1, Math.round(windowSize * this.sampleRate / 1000));
         const envelope = [];
-        for (let i = 0; i < signal.length - windowSamples; i += Math.round(windowSamples / 2)) {
+        for (let i = 0; i < signal.length - windowSamples; i += Math.max(1, Math.round(windowSamples / 2))) {
             let sumSq = 0;
             for (let j = 0; j < windowSamples; j++) {
                 sumSq += signal[i + j] * signal[i + j];
@@ -564,59 +300,44 @@ class ECGSignalEngine {
         return envelope;
     }
 
-    // ========== CONFIGURATION METHODS ==========
-    
-    // Set ECG type (surface or needle)
     setECGType(type) {
         this.ecgType = type;
-        this.sampleRate = type === 'needle' ? this.sampleRateNeedle : 2000;
+        this.sampleRate = type === 'needle' ? this.sampleRateNeedle : 1000;
     }
-    
-    // Set subject body type for fat attenuation
+
     setSubjectType(type) {
-        this.subjectType = type; // 'thin', 'normal', or 'high'
+        this.subjectType = type;
     }
-    
-    // Set electrode impedance
+
     setImpedance(impedanceKOhm) {
         this.electrodeImpedance = impedanceKOhm;
     }
-    
-    // Enable/disable fatigue modeling
-    setFatigueEnabled(enabled) {
-        this.fatigueEnabled = enabled;
+
+    setFatigueEnabled() {
+        // Kept for backward compatibility with existing UI controls.
     }
-    
-    // Enable/disable crosstalk
-    setCrosstalkEnabled(enabled) {
-        this.crosstalkEnabled = enabled;
+
+    setCrosstalkEnabled() {
+        // Kept for backward compatibility with existing UI controls.
     }
-    
-    // Enable/disable baseline drift
+
     setBaselineDriftEnabled(enabled) {
         this.baselineDriftEnabled = enabled;
     }
-    
-    // Enable conduction block for neuropathy
-    enableConductionBlock(condition) {
-        if (this.conditions[condition]) {
-            this.conditions[condition].conductionBlock = true;
-        }
+
+    enableConductionBlock() {
+        // Not used in ECG rhythm simulation; retained as no-op for compatibility.
     }
-    
-    // Get physiological info
+
     getPhysiologicalInfo() {
         return {
-            restingPotential: this.restingPotential,
-            actionPotential: this.actionPotential,
-            conductionVelocity: this.conductionVelocity,
             sampleRate: this.sampleRate,
             bandwidth: this.bandwidth[this.ecgType],
             noiseRMS: this.noiseRMS,
-            isiVariability: this.isiVariability
+            electrodeImpedance: this.electrodeImpedance,
+            conditions: Object.keys(this.conditions)
         };
     }
 }
 
-// Make it globally available
 window.ECGEngine = new ECGSignalEngine();
