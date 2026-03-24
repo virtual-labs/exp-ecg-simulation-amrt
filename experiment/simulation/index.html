@@ -181,8 +181,8 @@
                         </div>
                     </div>
 
-                    <div class="muap-visualization">
-                        <canvas id="muap-canvas" width="700" height="200"></canvas>
+                    <div class="ecg-preview-visualization">
+                        <canvas id="ecg-preview-canvas" width="700" height="200"></canvas>
                         <p class="canvas-caption">ECG cycle preview with P wave, QRS complex, and T wave landmarks</p>
                     </div>
 
@@ -294,12 +294,12 @@
                         <i class="fas fa-hand-holding-medical"></i>
                         <div>
                             <h2>Patient Preparation & Electrode Placement</h2>
-                            <p>Select a lead-region target, then prepare skin and complete correct ECG electrode placement.</p>
+                            <p>Prepare all ECG electrode sites (RA, LA, RL), then place leads on the correct body targets.</p>
                         </div>
                     </div>
                 
                     <!-- Muscle Selection Panel -->
-                    <div class="muscle-selection-panel" id="muscle-selection-panel">
+                    <div class="muscle-selection-panel hidden" id="muscle-selection-panel">
                         <div class="panel-header">
                             <i class="fas fa-user-injured"></i>
                             <h3>Select a Lead Region to Examine</h3>
@@ -359,12 +359,11 @@
                     </div>
                 </div>
 
-                <!-- Prep Workspace (shown after muscle selection) -->
-                <div class="prep-workspace hidden" id="prep-workspace">
+                <!-- Prep Workspace -->
+                <div class="prep-workspace" id="prep-workspace">
                     <div class="selected-muscle-header">
-                        <span>Selected Lead Region: </span>
-                        <strong id="prep-muscle-name">Lead II Setup (RA-LA-RL)</strong>
-                        <button class="btn-small btn-secondary" id="change-muscle-btn">Change Region</button>
+                        <span>Standard Workflow: </span>
+                        <strong id="prep-muscle-name">12-Lead ECG Setup (10 Electrodes)</strong>
                     </div>
 
                     <!-- Horizontal Progress Bar -->
@@ -415,83 +414,81 @@
 
                     <!-- Main Prep Area -->
                     <div class="prep-main-area">
-                        <!-- Arm Diagram with animation layers -->
+                        <!-- Full Body Diagram - Simplified Click-Based Electrode Placement -->
                         <div class="arm-container" id="arm-container">
-                            <svg id="arm-svg" viewBox="0 0 500 600" class="arm-svg">
-                                <!-- Base skin layer -->
-                                <path class="arm-skin" id="muscle-shape-bg" d="M150,50 Q130,150 120,300 Q115,400 130,500 Q150,570 200,580 L300,580 Q350,570 370,500 Q385,400 380,300 Q370,150 350,50 Z" />
+                            <svg id="arm-svg" viewBox="0 0 600 700" class="arm-svg">
+                                <!-- Full Body for ECG Electrode Placement -->
                                 
-                                <!-- Shine overlay for clean effect -->
-                                <path class="skin-shine-layer" id="skin-shine" d="M150,50 Q130,150 120,300 Q115,400 130,500 Q150,570 200,580 L300,580 Q350,570 370,500 Q385,400 380,300 Q370,150 350,50 Z" />
+                                <!-- Head -->
+                                <circle cx="300" cy="50" r="35" fill="#f9e4b7" stroke="#333" stroke-width="2"/>
                                 
-                                <!-- Texture overlay for abrasion effect -->
-                                <defs>
-                                    <pattern id="abraded-texture" patternUnits="userSpaceOnUse" width="4" height="4">
-                                        <circle cx="2" cy="2" r="0.5" fill="rgba(239, 68, 68, 0.3)"/>
-                                    </pattern>
-                                    <linearGradient id="shine-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" style="stop-color:rgba(255,255,255,0.6)"/>
-                                        <stop offset="50%" style="stop-color:rgba(255,255,255,0.1)"/>
-                                        <stop offset="100%" style="stop-color:rgba(255,255,255,0.4)"/>
-                                    </linearGradient>
-                                    <radialGradient id="gel-glow" cx="50%" cy="50%" r="50%">
-                                        <stop offset="0%" style="stop-color:rgba(59,130,246,0.6)"/>
-                                        <stop offset="100%" style="stop-color:rgba(59,130,246,0)"/>
-                                    </radialGradient>
-                                </defs>
-                                <path class="skin-texture-layer" id="skin-texture" d="M150,50 Q130,150 120,300 Q115,400 130,500 Q150,570 200,580 L300,580 Q350,570 370,500 Q385,400 380,300 Q370,150 350,50 Z" />
+                                <!-- Neck -->
+                                <rect x="280" y="80" width="40" height="25" fill="#f9e4b7" stroke="#333" stroke-width="2"/>
                                 
-                                <!-- Muscle underneath (visible on hover) -->
-                                <path class="arm-muscle hidden" id="muscle-shape-inner" d="M170,100 Q160,200 155,320 Q152,400 165,480 Q175,530 210,540 L290,540 Q325,530 335,480 Q348,400 345,320 Q340,200 330,100 Z" />
+                                <!-- Torso -->
+                                <ellipse cx="300" cy="180" rx="80" ry="100" fill="#f9e4b7" stroke="#333" stroke-width="2"/>
                                 
-                                <!-- Skin prep zones -->
-                                <circle class="prep-zone" id="prep-zone-1" cx="250" cy="200" r="25" data-zone="ra" />
-                                <circle class="prep-zone" id="prep-zone-2" cx="250" cy="300" r="25" data-zone="la" />
-                                <circle class="prep-zone" id="prep-zone-3" cx="250" cy="450" r="25" data-zone="rl" />
+                                <!-- Left Arm -->
+                                <ellipse cx="150" cy="140" rx="28" ry="70" fill="#f9e4b7" stroke="#333" stroke-width="2" transform="rotate(-30 150 140)"/>
+                                <circle cx="100" cy="200" r="20" fill="#f9e4b7" stroke="#333" stroke-width="2"/>
                                 
-                                <!-- Gel shine spots -->
-                                <circle class="gel-shine" id="gel-shine-1" cx="250" cy="200" r="20" />
-                                <circle class="gel-shine" id="gel-shine-2" cx="250" cy="300" r="20" />
-                                <circle class="gel-shine" id="gel-shine-3" cx="250" cy="450" r="20" />
+                                <!-- Right Arm -->
+                                <ellipse cx="450" cy="140" rx="28" ry="70" fill="#f9e4b7" stroke="#333" stroke-width="2" transform="rotate(30 450 140)"/>
+                                <circle cx="500" cy="200" r="20" fill="#f9e4b7" stroke="#333" stroke-width="2"/>
                                 
-                                <!-- Electrode placement targets -->
-                                <circle class="electrode-target hidden" id="target-ra" cx="250" cy="200" r="18" />
-                                <circle class="electrode-target hidden" id="target-la" cx="250" cy="300" r="18" />
-                                <circle class="electrode-target hidden" id="target-rl" cx="250" cy="450" r="18" />
+                                <!-- Left Leg -->
+                                <ellipse cx="250" cy="380" rx="35" ry="90" fill="#f9e4b7" stroke="#333" stroke-width="2"/>
+                                <ellipse cx="250" cy="600" rx="30" ry="25" fill="#f9e4b7" stroke="#333" stroke-width="2"/>
                                 
-                                <!-- Placed electrodes with cables -->
-                                <g class="placed-electrode hidden" id="placed-e-ra">
-                                    <circle cx="250" cy="200" r="16" class="electrode-body"/>
-                                    <text x="250" y="205" class="electrode-text">RA</text>
-                                    <path class="electrode-cable" d="M250,184 Q200,150 150,120 L100,80"/>
-                                </g>
-                                <g class="placed-electrode hidden" id="placed-e-la">
-                                    <circle cx="250" cy="300" r="16" class="electrode-body"/>
-                                    <text x="250" y="305" class="electrode-text">LA</text>
-                                    <path class="electrode-cable" d="M250,284 Q200,250 150,220 L100,180"/>
-                                </g>
-                                <g class="placed-electrode hidden" id="placed-e-rl">
-                                    <circle cx="250" cy="450" r="16" class="electrode-body"/>
-                                    <text x="250" y="455" class="electrode-text">RL</text>
-                                    <path class="electrode-cable" d="M250,434 Q200,400 150,380 L100,350"/>
-                                </g>
+                                <!-- Right Leg -->
+                                <ellipse cx="350" cy="380" rx="35" ry="90" fill="#f9e4b7" stroke="#333" stroke-width="2"/>
+                                <ellipse cx="350" cy="600" rx="30" ry="25" fill="#f9e4b7" stroke="#333" stroke-width="2"/>
+
+                                <!-- Thread-like lead lines are rendered here after placement -->
+                                <g id="electrode-thread-layer"></g>
                                 
-                                <!-- Labels with full electrode names -->
-                                <g class="zone-label-group" id="label-active">
-                                    <text x="310" y="195" class="zone-label zone-label-name">RA - Right Arm</text>
-                                    <text x="310" y="212" class="zone-label zone-label-desc">(Limb Lead Electrode)</text>
-                                </g>
-                                <g class="zone-label-group" id="label-reference">
-                                    <text x="310" y="295" class="zone-label zone-label-name">LA - Left Arm</text>
-                                    <text x="310" y="312" class="zone-label zone-label-desc">(Limb Lead Electrode)</text>
-                                </g>
-                                <g class="zone-label-group" id="label-ground">
-                                    <text x="310" y="445" class="zone-label zone-label-name">RL - Ground/Reference</text>
-                                    <text x="310" y="462" class="zone-label zone-label-desc">(Right Leg Electrode)</text>
-                                </g>
+                                <!-- 10 ELECTRODE ZONES (12-Lead ECG: 4 limb + 6 chest) -->
                                 
-                                <!-- Muscle label -->
-                                <text x="100" y="320" class="muscle-label hidden" id="muscle-label-text" transform="rotate(-90,100,320)">Selected Lead Setup</text>
+                                <!-- Limb leads -->
+                                <circle class="prep-zone" id="prep-zone-ra" cx="500" cy="200" r="20" data-zone="ra" fill="rgba(0,136,204,0.18)" stroke="#0088cc" stroke-width="3" opacity="0.9"/>
+                                <text x="500" y="206" class="zone-label-bold" text-anchor="middle" font-weight="bold" font-size="11">RA</text>
+
+                                <circle class="prep-zone" id="prep-zone-la" cx="100" cy="200" r="20" data-zone="la" fill="rgba(0,136,204,0.18)" stroke="#0088cc" stroke-width="3" opacity="0.9"/>
+                                <text x="100" y="206" class="zone-label-bold" text-anchor="middle" font-weight="bold" font-size="11">LA</text>
+
+                                <circle class="prep-zone" id="prep-zone-rl" cx="350" cy="600" r="20" data-zone="rl" fill="rgba(255,152,0,0.18)" stroke="#ff9800" stroke-width="3" opacity="0.9"/>
+                                <text x="350" y="606" class="zone-label-bold" text-anchor="middle" font-weight="bold" font-size="11">RL</text>
+
+                                <circle class="prep-zone" id="prep-zone-ll" cx="250" cy="600" r="20" data-zone="ll" fill="rgba(0,136,204,0.18)" stroke="#0088cc" stroke-width="3" opacity="0.9"/>
+                                <text x="250" y="606" class="zone-label-bold" text-anchor="middle" font-weight="bold" font-size="11">LL</text>
+
+                                <!-- Chest leads V1-V6 -->
+                                <circle class="prep-zone" id="prep-zone-v1" cx="270" cy="175" r="16" data-zone="v1" fill="rgba(225,29,72,0.18)" stroke="#e11d48" stroke-width="3" opacity="0.9"/>
+                                <text x="270" y="180" class="zone-label-bold" text-anchor="middle" font-weight="bold" font-size="10">V1</text>
+
+                                <circle class="prep-zone" id="prep-zone-v2" cx="330" cy="175" r="16" data-zone="v2" fill="rgba(225,29,72,0.18)" stroke="#e11d48" stroke-width="3" opacity="0.9"/>
+                                <text x="330" y="180" class="zone-label-bold" text-anchor="middle" font-weight="bold" font-size="10">V2</text>
+
+                                <circle class="prep-zone" id="prep-zone-v4" cx="360" cy="230" r="16" data-zone="v4" fill="rgba(225,29,72,0.18)" stroke="#e11d48" stroke-width="3" opacity="0.9"/>
+                                <text x="360" y="235" class="zone-label-bold" text-anchor="middle" font-weight="bold" font-size="10">V4</text>
+
+                                <circle class="prep-zone" id="prep-zone-v3" cx="345" cy="205" r="16" data-zone="v3" fill="rgba(225,29,72,0.18)" stroke="#e11d48" stroke-width="3" opacity="0.9"/>
+                                <text x="345" y="210" class="zone-label-bold" text-anchor="middle" font-weight="bold" font-size="10">V3</text>
+
+                                <circle class="prep-zone" id="prep-zone-v5" cx="390" cy="230" r="16" data-zone="v5" fill="rgba(225,29,72,0.18)" stroke="#e11d48" stroke-width="3" opacity="0.9"/>
+                                <text x="390" y="235" class="zone-label-bold" text-anchor="middle" font-weight="bold" font-size="10">V5</text>
+
+                                <circle class="prep-zone" id="prep-zone-v6" cx="420" cy="230" r="16" data-zone="v6" fill="rgba(225,29,72,0.18)" stroke="#e11d48" stroke-width="3" opacity="0.9"/>
+                                <text x="420" y="235" class="zone-label-bold" text-anchor="middle" font-weight="bold" font-size="10">V6</text>
+
+                                <!-- Legend -->
+                                <text x="20" y="650" font-size="10" fill="#666" font-weight="bold">
+                                    <tspan x="20">Blue: Limb leads (RA, LA, LL) | Orange: RL ground</tspan>
+                                    <tspan x="20" dy="15">Pink: Chest leads V1-V6</tspan>
+                                </text>
+                                <text x="20" y="685" font-size="10" fill="#999">
+                                    <tspan x="20">Prep steps: drag once on any zone. Placement: tap each electrode to auto-attach.</tspan>
+                                </text>
                             </svg>
                         </div>
 
@@ -512,26 +509,16 @@
                                     <div class="step-header-right">
                                         <div class="site-dots">
                                             <span class="dot" id="clean-dot-1"></span>
-                                            <span class="dot" id="clean-dot-2"></span>
-                                            <span class="dot" id="clean-dot-3"></span>
                                         </div>
                                         <i class="fas fa-chevron-down collapse-icon"></i>
                                     </div>
                                 </div>
                                 <div class="step-body">
-                                    <p class="step-instruction">Drag the alcohol swab to each electrode site to clean the skin surface.</p>
+                                    <p class="step-instruction">Drag the alcohol swab once to any zone to clean all 10 sites.</p>
                                     <div class="substep-tracker">
                                         <div class="substep-item" id="clean-item-1">
                                             <span class="substep-dot"></span>
-                                            <span class="substep-label">RA Site</span>
-                                        </div>
-                                        <div class="substep-item" id="clean-item-2">
-                                            <span class="substep-dot"></span>
-                                            <span class="substep-label">LA Site</span>
-                                        </div>
-                                        <div class="substep-item" id="clean-item-3">
-                                            <span class="substep-dot"></span>
-                                            <span class="substep-label">RL Site</span>
+                                            <span class="substep-label">All 10 electrode sites</span>
                                         </div>
                                     </div>
                                 </div>
@@ -552,26 +539,16 @@
                                     <div class="step-header-right">
                                         <div class="site-dots">
                                             <span class="dot" id="abrade-dot-1"></span>
-                                            <span class="dot" id="abrade-dot-2"></span>
-                                            <span class="dot" id="abrade-dot-3"></span>
                                         </div>
                                         <i class="fas fa-chevron-down collapse-icon"></i>
                                     </div>
                                 </div>
                                 <div class="step-body">
-                                    <p class="step-instruction">Gently abrade each site to reduce impedance below 5 kΩ.</p>
+                                    <p class="step-instruction">Drag the prep pad once to any zone to abrade all 10 sites.</p>
                                     <div class="substep-tracker">
                                         <div class="substep-item" id="abrade-item-1">
                                             <span class="substep-dot"></span>
-                                            <span class="substep-label">RA Site</span>
-                                        </div>
-                                        <div class="substep-item" id="abrade-item-2">
-                                            <span class="substep-dot"></span>
-                                            <span class="substep-label">LA Site</span>
-                                        </div>
-                                        <div class="substep-item" id="abrade-item-3">
-                                            <span class="substep-dot"></span>
-                                            <span class="substep-label">RL Site</span>
+                                            <span class="substep-label">All 10 electrode sites</span>
                                         </div>
                                     </div>
                                 </div>
@@ -592,43 +569,40 @@
                                     <div class="step-header-right">
                                         <div class="site-dots">
                                             <span class="dot" id="gel-dot-1"></span>
-                                            <span class="dot" id="gel-dot-2"></span>
-                                            <span class="dot" id="gel-dot-3"></span>
                                         </div>
                                         <i class="fas fa-chevron-down collapse-icon"></i>
                                     </div>
                                 </div>
                                 <div class="step-body">
-                                    <p class="step-instruction">Apply conductive gel to each site for optimal electrical contact.</p>
+                                    <p class="step-instruction">Drag conductive gel once to any zone to apply on all 10 sites.</p>
                                     <div class="substep-tracker">
                                         <div class="substep-item" id="gel-item-1">
                                             <span class="substep-dot"></span>
-                                            <span class="substep-label">RA Site</span>
-                                        </div>
-                                        <div class="substep-item" id="gel-item-2">
-                                            <span class="substep-dot"></span>
-                                            <span class="substep-label">LA Site</span>
-                                        </div>
-                                        <div class="substep-item" id="gel-item-3">
-                                            <span class="substep-dot"></span>
-                                            <span class="substep-label">RL Site</span>
+                                            <span class="substep-label">All 10 electrode sites</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Step 4: Place Electrodes -->
+                            <!-- Step 4: Place Electrodes (12-Lead ECG, 10 sites) -->
                             <div class="collapsible-step" id="prep-step-4" data-step="place">
                                 <div class="step-header" onclick="togglePrepStep(4)">
                                     <div class="step-header-left">
                                         <div class="electrode-tray" id="electrode-tray">
-                                            <div class="electrode-pick" draggable="true" id="drag-e-ra" data-type="ra">RA</div>
-                                            <div class="electrode-pick" draggable="true" id="drag-e-la" data-type="la">LA</div>
-                                            <div class="electrode-pick" draggable="true" id="drag-e-rl" data-type="rl">RL</div>
+                                            <div class="electrode-pick" id="electrode-ra" draggable="true" data-type="ra">RA</div>
+                                            <div class="electrode-pick" id="electrode-la" draggable="true" data-type="la">LA</div>
+                                            <div class="electrode-pick" id="electrode-rl" draggable="true" data-type="rl">RL</div>
+                                            <div class="electrode-pick" id="electrode-ll" draggable="true" data-type="ll">LL</div>
+                                            <div class="electrode-pick" id="electrode-v1" draggable="true" data-type="v1">V1</div>
+                                            <div class="electrode-pick" id="electrode-v2" draggable="true" data-type="v2">V2</div>
+                                            <div class="electrode-pick" id="electrode-v3" draggable="true" data-type="v3">V3</div>
+                                            <div class="electrode-pick" id="electrode-v4" draggable="true" data-type="v4">V4</div>
+                                            <div class="electrode-pick" id="electrode-v5" draggable="true" data-type="v5">V5</div>
+                                            <div class="electrode-pick" id="electrode-v6" draggable="true" data-type="v6">V6</div>
                                         </div>
                                         <div class="step-title">
                                             <strong>Place Electrodes</strong>
-                                            <span class="step-subtitle">Attach to prepared sites</span>
+                                            <span class="step-subtitle">Tap each electrode once to auto-attach to the correct anatomical zone</span>
                                         </div>
                                     </div>
                                     <div class="step-header-right">
@@ -636,16 +610,50 @@
                                             <span class="dot" id="place-dot-ra"></span>
                                             <span class="dot" id="place-dot-la"></span>
                                             <span class="dot" id="place-dot-rl"></span>
+                                            <span class="dot" id="place-dot-ll"></span>
+                                            <span class="dot" id="place-dot-v1"></span>
+                                            <span class="dot" id="place-dot-v2"></span>
+                                            <span class="dot" id="place-dot-v3"></span>
+                                            <span class="dot" id="place-dot-v4"></span>
+                                            <span class="dot" id="place-dot-v5"></span>
+                                            <span class="dot" id="place-dot-v6"></span>
                                         </div>
                                         <i class="fas fa-chevron-down collapse-icon"></i>
                                     </div>
                                 </div>
                                 <div class="step-body">
-                                    <p class="step-instruction">Drag each electrode to its matching target zone.</p>
+                                    <p class="step-instruction">Tap each of the 10 electrodes in the tray. Each one auto-attaches to its matching body label (RA, LA, RL, LL, V1-V6).</p>
                                     <div class="electrode-guide">
-                                        <span class="guide-item"><span class="guide-dot e1"></span> RA → Right arm site</span>
-                                        <span class="guide-item"><span class="guide-dot e2"></span> LA → Left arm site</span>
-                                        <span class="guide-item"><span class="guide-dot gnd"></span> RL → Right leg ground site</span>
+                                        <span class="guide-item"><span class="guide-dot e1"></span> RA (Right Arm - Wrist/Forearm)</span>
+                                        <span class="guide-item"><span class="guide-dot e2"></span> LA (Left Arm - Wrist/Forearm)</span>
+                                        <span class="guide-item"><span class="guide-dot e3"></span> RL (Right Leg - Ankle, Ground reference)</span>
+                                        <span class="guide-item"><span class="guide-dot gnd"></span> LL (Left Leg - Ankle)</span>
+                                        <span class="guide-item"><span class="guide-dot e4"></span> V1: 4th ICS right sternal border</span>
+                                        <span class="guide-item"><span class="guide-dot e4"></span> V2: 4th ICS left sternal border</span>
+                                        <span class="guide-item"><span class="guide-dot e4"></span> V3: Midpoint between V2 and V4</span>
+                                        <span class="guide-item"><span class="guide-dot e4"></span> V4: 5th ICS midclavicular line</span>
+                                        <span class="guide-item"><span class="guide-dot e4"></span> V5: Anterior axillary line (V4 level)</span>
+                                        <span class="guide-item"><span class="guide-dot e4"></span> V6: Midaxillary line (V4 level)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 5: Validate Placement -->
+                            <div class="validation-panel hidden" id="validation-panel">
+                                <div class="validation-header">
+                                    <i class="fas fa-check-circle"></i>
+                                    <h3>Electrode Placement Validation</h3>
+                                    <p>Review the accuracy of each electrode placement</p>
+                                </div>
+                                <div class="validation-checks" id="validation-checks"></div>
+
+                                <div class="validation-summary" id="validation-summary">
+                                    <div class="summary-score">
+                                        <span class="score-label">Placement Quality:</span>
+                                        <span class="score-value" id="placement-quality">0%</span>
+                                    </div>
+                                    <div class="summary-message" id="summary-message">
+                                        <p>Click on body zones to place all electrodes</p>
                                     </div>
                                 </div>
                             </div>
@@ -811,6 +819,23 @@
                             <div class="signal-scale-info">
                                 <span id="scale-info">Scale: 1 div = 0.5 mV | Time: 100 ms/div</span>
                             </div>
+
+                            <!-- Signal Quality Indicator (based on electrode placement) -->
+                            <div class="signal-quality-indicator" id="signal-quality-indicator">
+                                <div class="quality-label">
+                                    <i class="fas fa-circle"></i>
+                                    <span>Signal Quality:</span>
+                                </div>
+                                <div class="quality-status" id="quality-status">
+                                    <span class="quality-value" id="quality-value">Good</span>
+                                    <div class="quality-bar">
+                                        <div class="quality-fill" id="quality-fill" style="width: 100%; background-color: #10b981;"></div>
+                                    </div>
+                                </div>
+                                <div class="quality-message" id="quality-message">
+                                    <small>Electrode placement affects signal quality and noise level</small>
+                                </div>
+                            </div>
                         
                             <!-- Signal Speed Control -->
                             <div class="signal-speed-control">
@@ -839,7 +864,7 @@
                                     <span class="metric-value" id="freq-value">0 Hz</span>
                                 </div>
                                 <div class="metric">
-                                    <span class="metric-label">Motor Units Active</span>
+                                    <span class="metric-label">Estimated BPM</span>
                                     <span class="metric-value" id="mu-value">0</span>
                                 </div>
                             </div>
@@ -868,41 +893,41 @@
                         <div class="recording-sidebar">
                             <!-- Condition selector -->
                             <div class="condition-selector-panel">
-                                <h4><i class="fas fa-user-injured"></i> Subject Condition</h4>
+                                <h4><i class="fas fa-heartbeat"></i> Rhythm Condition</h4>
                                 <!-- Hidden select for compatibility -->
                                 <select id="condition-select" class="hidden">
-                                    <option value="normal">Healthy Subject</option>
-                                    <option value="myopathy">Myopathy Patient</option>
-                                    <option value="neuropathy">Neuropathy Patient</option>
-                                    <option value="als">ALS Patient</option>
+                                    <option value="normal">Normal Sinus Rhythm</option>
+                                    <option value="tachycardia">Sinus Tachycardia</option>
+                                    <option value="bradycardia">Sinus Bradycardia</option>
+                                    <option value="irregular">Irregular Rhythm</option>
                                 </select>
                                 <div class="condition-cards-vertical" id="condition-cards">
                                     <div class="condition-card selected" data-condition="normal">
                                         <div class="condition-card-header">
                                             <i class="fas fa-user-check"></i>
-                                            <span class="condition-name">Healthy</span>
+                                            <span class="condition-name">Normal Sinus</span>
                                             <span class="condition-indicator healthy"></span>
                                         </div>
                                     </div>
-                                    <div class="condition-card" data-condition="myopathy">
+                                    <div class="condition-card" data-condition="tachycardia">
                                         <div class="condition-card-header">
                                             <i class="fas fa-user"></i>
-                                            <span class="condition-name">Myopathy</span>
-                                            <span class="condition-indicator myopathy"></span>
+                                            <span class="condition-name">Tachycardia</span>
+                                            <span class="condition-indicator tachycardia"></span>
                                         </div>
                                     </div>
-                                    <div class="condition-card" data-condition="neuropathy">
+                                    <div class="condition-card" data-condition="bradycardia">
                                         <div class="condition-card-header">
                                             <i class="fas fa-user"></i>
-                                            <span class="condition-name">Neuropathy</span>
-                                            <span class="condition-indicator neuropathy"></span>
+                                            <span class="condition-name">Bradycardia</span>
+                                            <span class="condition-indicator bradycardia"></span>
                                         </div>
                                     </div>
-                                    <div class="condition-card" data-condition="als">
+                                    <div class="condition-card" data-condition="irregular">
                                         <div class="condition-card-header">
                                             <i class="fas fa-user"></i>
-                                            <span class="condition-name">ALS</span>
-                                            <span class="condition-indicator als"></span>
+                                            <span class="condition-name">Irregular Rhythm</span>
+                                            <span class="condition-indicator irregular"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -910,15 +935,15 @@
 
                             <!-- Condition Description Panel -->
                             <div class="condition-info-panel" id="condition-info">
-                                <h4><i class="fas fa-info-circle"></i> <span id="condition-title">Healthy Subject</span></h4>
-                                <p id="condition-desc">Normal motor unit recruitment and firing patterns. ECG amplitude increases smoothly with force.</p>
+                                <h4><i class="fas fa-info-circle"></i> <span id="condition-title">Normal Sinus Rhythm</span></h4>
+                                <p id="condition-desc">Regular rhythm with stable P-QRS-T morphology and consistent RR intervals.</p>
                                 <div class="condition-characteristics" id="condition-chars"></div>
                             </div>
 
                             <!-- Force gauge -->
                             <div class="force-gauge-container">
-                                <h4><i class="fas fa-hand-rock"></i> Muscle Force</h4>
-                                <p class="force-instruction">Use slider to control force level.</p>
+                                <h4><i class="fas fa-sliders-h"></i> Rhythm Intensity</h4>
+                                <p class="force-instruction">Use slider to vary simulation intensity.</p>
                                 <div class="force-gauge">
                                     <div class="gauge-bg">
                                         <div class="gauge-fill" id="force-fill"></div>
@@ -974,10 +999,10 @@
                                 <div class="analysis-controls-row">
                                     <label>Trial: </label>
                                     <select id="trial-select-time">
-                                        <option value="normal">Healthy - Rest→MVC</option>
-                                        <option value="myopathy">Myopathy</option>
-                                        <option value="neuropathy">Neuropathy</option>
-                                        <option value="als">ALS</option>
+                                        <option value="normal">Normal Sinus Rhythm</option>
+                                        <option value="tachycardia">Sinus Tachycardia</option>
+                                        <option value="bradycardia">Sinus Bradycardia</option>
+                                        <option value="irregular">Irregular Rhythm</option>
                                     </select>
                                     <label>Zoom: </label>
                                     <input type="range" id="time-zoom" min="1" max="20" value="1">
@@ -991,10 +1016,10 @@
                                 <div class="analysis-controls-row">
                                     <label>Trial: </label>
                                     <select id="trial-select-freq">
-                                        <option value="normal">Healthy</option>
-                                        <option value="myopathy">Myopathy</option>
-                                        <option value="neuropathy">Neuropathy</option>
-                                        <option value="als">ALS</option>
+                                        <option value="normal">Normal Sinus Rhythm</option>
+                                        <option value="tachycardia">Sinus Tachycardia</option>
+                                        <option value="bradycardia">Sinus Bradycardia</option>
+                                        <option value="irregular">Irregular Rhythm</option>
                                     </select>
                                     <label>Window: </label>
                                     <select id="fft-window">
@@ -1026,19 +1051,19 @@
                                         <div class="comp-stats" id="comp-stats-normal"></div>
                                     </div>
                                     <div class="comparison-cell">
-                                        <h4><span class="condition-dot myopathy"></span> Myopathy</h4>
-                                        <canvas id="comp-myopathy" width="400" height="200"></canvas>
-                                        <div class="comp-stats" id="comp-stats-myopathy"></div>
+                                        <h4><span class="condition-dot tachycardia"></span> Sinus Tachycardia</h4>
+                                        <canvas id="comp-tachycardia" width="400" height="200"></canvas>
+                                        <div class="comp-stats" id="comp-stats-tachycardia"></div>
                                     </div>
                                     <div class="comparison-cell">
-                                        <h4><span class="condition-dot neuropathy"></span> Neuropathy</h4>
-                                        <canvas id="comp-neuropathy" width="400" height="200"></canvas>
-                                        <div class="comp-stats" id="comp-stats-neuropathy"></div>
+                                        <h4><span class="condition-dot bradycardia"></span> Sinus Bradycardia</h4>
+                                        <canvas id="comp-bradycardia" width="400" height="200"></canvas>
+                                        <div class="comp-stats" id="comp-stats-bradycardia"></div>
                                     </div>
                                     <div class="comparison-cell">
-                                        <h4><span class="condition-dot als"></span> ALS</h4>
-                                        <canvas id="comp-als" width="400" height="200"></canvas>
-                                        <div class="comp-stats" id="comp-stats-als"></div>
+                                        <h4><span class="condition-dot irregular"></span> Irregular Rhythm</h4>
+                                        <canvas id="comp-irregular" width="400" height="200"></canvas>
+                                        <div class="comp-stats" id="comp-stats-irregular"></div>
                                     </div>
                                 </div>
                             </div>
