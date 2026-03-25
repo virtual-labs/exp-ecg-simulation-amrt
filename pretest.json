@@ -1,0 +1,88 @@
+
+{
+  "version": 2.0,
+  "questions": [
+    {
+          "question": "1. ECG refers to:",
+      "answers": {
+        "a": "Echocardiogram",
+        "b": "Electrocardiogram",
+        "c": "Electromyogram",
+        "d": "Electroencephalogram"
+      },
+ 
+      "correctAnswer": "b",
+      "difficulty": "beginner"
+    },   
+
+
+    {
+      "question": "2. ECG measures:",
+      "answers": {
+        "a": "Electrical activity of muscle tissues",
+        "b": "Electrical activity in brain",
+        "c": "Electrical activity in heart",
+        "d": "Electrical activity of internal organs"
+      },
+      
+      "correctAnswer": "c",
+      "difficulty": "beginner"
+    },
+
+    {
+      "question": "3. The main complex mentioned in an ECG is:",
+      "answers": {
+        "a": "PQR",
+        "b": "RST",
+        "c": "PRS",
+        "d": "QRS"
+      },
+      
+      "correctAnswer": "d",
+      "difficulty": "beginner"
+    },
+
+    {
+      "question": "4. P wave in ECG is representative of:",
+      "answers": {
+        "a": "Atrial depolarization",
+        "b": "Atrial repolarization",
+        "c": "Ventricular depolarization",
+        "d": "Ventricular repolarization"
+      },
+      
+      "correctAnswer": "a",
+      "difficulty": "beginner"
+    },
+
+
+    {
+      "question": "5. Normally resting heart rate in a healthy individual is:",
+      "answers": {
+        "a": "100-140bpm",
+        "b": "50-80 bpm",
+        "c": "60-100bpm",
+        "d": "80-150 bpm"
+      },
+      
+      "correctAnswer": "c",
+      "difficulty": "beginner"
+    },
+
+
+
+
+    {
+      "question": "6. The T wave in ECG is indicative of:",
+      "answers": {
+        "a": "Atrial depolarization",
+        "b": "Atrial repolarization",
+        "c": "Ventricular depolarization",
+        "d": "Ventricular repolarization"
+      },
+     
+      "correctAnswer": "d",
+      "difficulty": "beginner"
+    }
+  ]
+}	 

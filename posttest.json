@@ -1,0 +1,72 @@
+
+{
+  "version": 2.0,
+  "questions": [
+    {
+          "question": "1. Which of the following are needed for ECG measurement?",
+      "answers": {
+        "a": "ECG amplifier",
+        "b": "Electrodes",
+        "c": "DAQ system",
+        "d": "All the above"
+      },
+ 
+      "correctAnswer": "d",
+      "difficulty": "beginner"
+    },   
+
+
+    {
+      "question": "2. Which of the following process filtrations does ECG analysis need?",
+      "answers": {
+        "a": "High-pass filter",
+        "b": "Low-pass filter",
+        "c": "Notch filter",
+        "d": "All the above"
+      },
+      
+      "correctAnswer": "d",
+      "difficulty": "beginner"
+    },
+
+    {
+      "question": "3. From the simulator, identify which of the following conditions is associated with a fast heart rate?",
+      "answers": {
+        "a": "Heart attack",
+        "b": "Tachycardia",
+        "c": "Bradycardia",
+        "d": "Block"
+      },
+      
+      "correctAnswer": "b",
+      "difficulty": "beginner"
+    },
+
+    {
+      "question": "4. In mild bradycardia, the heart rate observed is:",
+      "answers": {
+        "a": "Greater than 100bpm",
+        "b": "Less than 60bpm",
+        "c": "Greater than 80 bpm",
+        "d": "Between 80-100"
+      },
+      
+      "correctAnswer": "b",
+      "difficulty": "beginner"
+    },
+
+
+    {
+      "question": "5. The step-by-step process in the ECG placement system is:",
+      "answers": {
+        "a": "Clean skin → Abrade surface→ Apply gel → Place electrodes",
+        "b": "Abrade surface → Apply gel → Clean skin → Place electrodes",
+        "c": "Place electrodes → Apply gel → Clean skin → Abrade surface",
+        "d": "Clean skin → Apply gel → Abrade surface → Place electrodes"
+      },
+     
+      "correctAnswer": "a",
+      "difficulty": "beginner"
+    }
+  ]
+}	 
